@@ -18,7 +18,7 @@ const User = {
   async findById(id) {
     try {
       const [rows] = await db.execute(
-        'SELECT user_id, username, role FROM tbl_users WHERE user_id = ?',
+        'SELECT user_id, name, username, role FROM tbl_users WHERE user_id = ?',
         [id]
       );
       return rows[0];

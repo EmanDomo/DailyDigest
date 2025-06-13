@@ -311,7 +311,7 @@ const UserDashboard = ({ setIsLoggedIn }) => {
               <h1 className="dashboard-title">
                 <span className="me-2">💩</span>
                 {user ? (
-                  <>Welcome to Poop Tracker Dashboard, {user.username}</>
+                  <>Welcome to Poop Tracker Dashboard, {user.name}</>
                 ) : (
                   <>Loading...</>
                 )}
