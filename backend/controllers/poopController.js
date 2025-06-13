@@ -1,13 +1,11 @@
 import PoopModel from '../models/poopModel.js';
+import authenticateToken from '../middleware/auth.js';
 
 const poopController = {
   getPoopRecords: async (req, res) => {
     try {
-      // Option 1: Use a default user ID (e.g., 1) for testing
-      const userId = 1; // Hardcoded for now
-      
-      // Option 2: Get all records regardless of user
-      // const dates = await PoopModel.getAllRecords();
+      // USE AUTHENTICATED USER ID FROM req.user
+      const userId = req.user.id;
       
       const dates = await PoopModel.getRecordsByUserId(userId);
       res.json({ dates });
@@ -19,9 +17,8 @@ const poopController = {
 
   createPoopRecord: async (req, res) => {
     try {
-      // Option 1: Use a default user ID (e.g., 1) for testing
-      const userId = 1; // Hardcoded for now
-      
+      // USE AUTHENTICATED USER ID FROM req.user
+      const userId = req.user.id;
       const { date } = req.body;
 
       await PoopModel.createRecord(userId, date);

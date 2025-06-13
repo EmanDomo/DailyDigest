@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Container, Row, Col, Button, Alert, Card, Badge,
   Stack, Modal, ListGroup
 } from 'react-bootstrap';
 import '../../styles/UserDashboard.css';
+import axios from 'axios';
 
 const UserDashboard = ({ setIsLoggedIn }) => {
   const [poopDates, setPoopDates] = useState([]);
@@ -12,79 +13,79 @@ const UserDashboard = ({ setIsLoggedIn }) => {
   const [showCalendar, setShowCalendar] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    axios.get('http://localhost:8000/api/auth/user', { withCredentials: true }) // 👈 must include this to send cookies
+      .then(res => {
+        setUser(res.data);
+      })
+      .catch(err => {
+        console.log('Not logged in', err);
+      });
+  }, []);
 
   // Fetch poop data from backend
-const fetchPoopData = async () => {
-  try {
-    setLoading(true);
-    
-    // Remove all token-related code
-    const response = await fetch('http://localhost:8000/api/poop-records', {
-      headers: {
-        'Content-Type': 'application/json'
-        // Remove Authorization header
-      }
-    });
-    
-    console.log('Response status:', response.status);
-    
-    // Check if response is actually JSON
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('Non-JSON response:', text.substring(0, 200));
-      throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
-    }
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    setPoopDates(data.dates);
-    setError(null);
-  } catch (err) {
-    console.error('Error fetching poop data:', err);
-    setError(`Failed to load data: ${err.message}`);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // Save poop record to backend
-  const savePoopRecord = async (date) => {
+  const fetchPoopData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      
-      // For development - just update local state if no backend
-      if (!token || process.env.NODE_ENV === 'development') {
-        console.log('Saving to local state for development');
-        return { success: true };
-      }
+      setLoading(true);
 
-      const response = await fetch('/api/poop-records', {
-        method: 'POST',
+      const response = await fetch('http://localhost:8000/api/poop-records', {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ date })
+        credentials: 'include' // IMPORTANT: Include cookies
       });
-      
-      // Check if response is actually JSON
+
+      console.log('Response status:', response.status);
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Non-JSON response:', text.substring(0, 200));
         throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
       }
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
+      const data = await response.json();
+      setPoopDates(data.dates);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching poop data:', err);
+      setError(`Failed to load data: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Save poop record to backend
+  const savePoopRecord = async (date) => {
+    try {
+      const response = await fetch('http://localhost:8000/api/poop-records', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // IMPORTANT: Include cookies
+        body: JSON.stringify({ date })
+      });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
       return await response.json();
     } catch (err) {
       console.error('Error saving poop record:', err);
@@ -97,9 +98,23 @@ const fetchPoopData = async () => {
     fetchPoopData();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token'); // Clear auth token
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    try {
+      // Call logout endpoint to clear server-side cookie
+      await fetch('http://localhost:8000/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include' // IMPORTANT: Include cookies
+      });
+
+      // Remove any remaining localStorage items (cleanup)
+      localStorage.removeItem('token');
+      setIsLoggedIn(false);
+    } catch (err) {
+      console.error('Logout error:', err);
+      // Even if logout fails, still log out on frontend
+      localStorage.removeItem('token');
+      setIsLoggedIn(false);
+    }
   };
 
   const handlePoopToday = async () => {
@@ -118,7 +133,7 @@ const fetchPoopData = async () => {
 
   const calculateDaysSinceLastPoop = () => {
     if (poopDates.length === 0) return 0;
-    
+
     const today = new Date();
     const lastPoopDate = new Date(Math.max(...poopDates.map(date => new Date(date))));
     const diffTime = today - lastPoopDate;
@@ -199,7 +214,7 @@ const fetchPoopData = async () => {
 
   const getStreakInfo = () => {
     if (poopDates.length === 0) return { current: 0, longest: 0 };
-    
+
     const sortedDates = [...poopDates].sort((a, b) => new Date(b) - new Date(a));
     let currentStreak = 0;
     let longestStreak = 0;
@@ -207,7 +222,7 @@ const fetchPoopData = async () => {
 
     const today = new Date();
     let checkDate = new Date(today);
-    
+
     for (let i = 0; i < 30; i++) {
       const dateStr = checkDate.toISOString().split('T')[0];
       if (sortedDates.includes(dateStr)) {
@@ -220,9 +235,9 @@ const fetchPoopData = async () => {
 
     for (let i = 1; i < sortedDates.length; i++) {
       const current = new Date(sortedDates[i]);
-      const previous = new Date(sortedDates[i-1]);
+      const previous = new Date(sortedDates[i - 1]);
       const diffDays = Math.abs((previous - current) / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays === 1) {
         tempStreak++;
       } else {
@@ -272,7 +287,7 @@ const fetchPoopData = async () => {
   const currentMonth = monthNames[new Date().getMonth()];
   const currentYear = new Date().getFullYear();
   const todayString = new Date().toISOString().split('T')[0];
-  const currentMonthPoops = poopDates.filter(date => 
+  const currentMonthPoops = poopDates.filter(date =>
     date.startsWith(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
   );
 
@@ -280,25 +295,30 @@ const fetchPoopData = async () => {
     <Container fluid className="dashboard-container">
       <Container>
         {showSuccessAlert && (
-          <Alert 
-            variant="success" 
+          <Alert
+            variant="success"
             className="success-alert"
-            onClose={() => setShowSuccessAlert(false)} 
+            onClose={() => setShowSuccessAlert(false)}
             dismissible
           >
             <strong>Great job! 💩</strong> Today's poop has been recorded!
           </Alert>
         )}
-        
+
         <Row className="mb-4">
           <Col>
             <Stack direction="horizontal" className="justify-content-between align-items-center">
               <h1 className="dashboard-title">
                 <span className="me-2">💩</span>
-                Poop Tracker Dashboard
+                {user ? (
+                  <>Welcome to Poop Tracker Dashboard, {user.username}</>
+                ) : (
+                  <>Loading...</>
+                )}
               </h1>
-              <Button 
-                variant="outline-primary" 
+
+              <Button
+                variant="outline-primary"
                 onClick={handleLogout}
                 className="logout-btn"
               >
@@ -326,7 +346,7 @@ const fetchPoopData = async () => {
               </Card.Body>
             </Card>
           </Col>
-          
+
           <Col md={4} className="mb-3">
             <Card className="stat-card">
               <Card.Body>
@@ -337,7 +357,7 @@ const fetchPoopData = async () => {
               </Card.Body>
             </Card>
           </Col>
-          
+
           <Col md={4} className="mb-3">
             <Card className="stat-card">
               <Card.Body>
@@ -355,15 +375,15 @@ const fetchPoopData = async () => {
             <Card className="action-card">
               <Card.Body className="text-center">
                 <h3 className="mb-3 action-title">Did you poop today?</h3>
-                <Button 
+                <Button
                   size="lg"
                   className={`poop-button ${poopDates.includes(todayString) ? 'disabled' : ''}`}
                   onClick={handlePoopToday}
                   disabled={poopDates.includes(todayString)}
                 >
                   <span className="me-2">💩</span>
-                  {poopDates.includes(todayString) 
-                    ? "Already recorded for today!" 
+                  {poopDates.includes(todayString)
+                    ? "Already recorded for today!"
                     : "I Pooped Today!"}
                 </Button>
               </Card.Body>
@@ -380,8 +400,8 @@ const fetchPoopData = async () => {
                     <span className="me-2">📅</span>
                     {currentMonth} {currentYear}
                   </h4>
-                  <Button 
-                    variant="outline-light" 
+                  <Button
+                    variant="outline-light"
                     size="sm"
                     onClick={() => setShowCalendar(!showCalendar)}
                     className="calendar-toggle"
@@ -415,7 +435,7 @@ const fetchPoopData = async () => {
               </Card.Body>
             </Card>
           </Col>
-          
+
           <Col lg={4} className="mb-4">
             <Card className="stats-card">
               <Card.Header className="stats-header-bg">
@@ -432,14 +452,14 @@ const fetchPoopData = async () => {
                       {currentMonthPoops.length}
                     </Badge>
                   </ListGroup.Item>
-                  
+
                   <ListGroup.Item className="stats-item">
                     <span className="stats-label">Average per Week:</span>
                     <Badge className="stats-badge-alt" pill>
                       {Math.round((currentMonthPoops.length / 4) * 10) / 10}
                     </Badge>
                   </ListGroup.Item>
-                  
+
                   <ListGroup.Item className="stats-item">
                     <span className="stats-label">Days This Month:</span>
                     <Badge className="stats-badge-alt2" pill>
@@ -447,7 +467,7 @@ const fetchPoopData = async () => {
                     </Badge>
                   </ListGroup.Item>
                 </ListGroup>
-                
+
                 <hr className="stats-divider" />
                 <h6 className="recent-title">Recent Activity</h6>
                 <div className="small">

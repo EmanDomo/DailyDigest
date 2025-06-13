@@ -2,12 +2,32 @@ import db from '../config/db.js';
 
 const User = {
   async findByUsername(username) {
-    const result = await db.query(
-      'SELECT * FROM tbl_users WHERE username = $1',
-      [username]
-    );
-    return rows[0];
+    try {
+      const [rows] = await db.execute(
+        'SELECT * FROM tbl_users WHERE username = ?',
+        [username]
+      );
+      return rows[0];
+    } catch (error) {
+      console.error('Error finding user by username:', error);
+      throw error;
+    }
+  },
+
+  // ✅ Add this for /me route
+  async findById(id) {
+    try {
+      const [rows] = await db.execute(
+        'SELECT user_id, username, role FROM tbl_users WHERE user_id = ?',
+        [id]
+      );
+      return rows[0];
+    } catch (error) {
+      console.error('Error finding user by ID:', error);
+      throw error;
+    }
   }
 };
 
 export default User;
+

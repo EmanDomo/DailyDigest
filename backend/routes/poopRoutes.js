@@ -1,10 +1,11 @@
 import express from 'express';
 import poopController from '../controllers/poopController.js';
+import authenticateToken from '../middleware/auth.js';
 
 const router = express.Router();
 
-
-router.get('/', poopController.getPoopRecords);
-router.post('/', poopController.createPoopRecord);
+// ADD AUTHENTICATION MIDDLEWARE TO PROTECT ROUTES
+router.get('/', authenticateToken, poopController.getPoopRecords);
+router.post('/', authenticateToken, poopController.createPoopRecord);
 
 export default router;

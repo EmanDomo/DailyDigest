@@ -23,26 +23,41 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
   // Mock navigate function for demo
   const navigate = (path) => console.log(`Navigating to: ${path}`);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate success
-      if (setIsLoggedIn) setIsLoggedIn(true);
-      navigate('/dashboard');
-      
-    } catch (err) {
-      setError('Login failed. Please check your credentials.');
-      if (setIsLoggedIn) setIsLoggedIn(false);
-    } finally {
-      setIsLoading(false);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError('');
+  
+  try {
+    const response = await fetch('http://localhost:8000/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // IMPORTANT: Include cookies
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Login failed');
     }
-  };
+
+    const data = await response.json();
+    console.log('Login successful:', data);
+    
+    // Remove localStorage token storage
+    if (setIsLoggedIn) setIsLoggedIn(true);
+    navigate('/dashboard');
+    
+  } catch (err) {
+    console.error('Login error:', err);
+    setError(err.message || 'Login failed. Please check your credentials.');
+    if (setIsLoggedIn) setIsLoggedIn(false);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // More responsive wave calculations
 const waveProps = useMemo(() => {
