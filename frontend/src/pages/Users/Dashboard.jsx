@@ -4,6 +4,7 @@ import {
   Stack, Modal, ListGroup
 } from 'react-bootstrap';
 import '../../styles/UserDashboard.css';
+import poopSoundFile from '../../assets/poopsound.mp3'; 
 import axios from 'axios';
 
 const UserDashboard = ({ setIsLoggedIn }) => {
@@ -14,9 +15,38 @@ const UserDashboard = ({ setIsLoggedIn }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
+  const [showPoopAnimation, setShowPoopAnimation] = useState(false);
+
+  // Create poop sound effect
+const playPoopSound = () => {
+  const audio = new Audio(poopSoundFile);
+  audio.volume = 1;
+  audio.play().catch(err => console.log('Audio play failed:', err));
+};
+
+  const getTodayLocal = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const parseLocalDate = (dateString) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // month is 0-indexed
+  };
+
+  // Helper function to get date string for a specific date
+  const getDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   useEffect(() => {
-    axios.get('http://localhost:8000/api/auth/user', { withCredentials: true }) // 👈 must include this to send cookies
+    axios.get('http://localhost:8000/api/auth/user', { withCredentials: true })
       .then(res => {
         setUser(res.data);
       })
@@ -34,7 +64,7 @@ const UserDashboard = ({ setIsLoggedIn }) => {
         headers: {
           'Content-Type': 'application/json'
         },
-        credentials: 'include' // IMPORTANT: Include cookies
+        credentials: 'include'
       });
 
       console.log('Response status:', response.status);
@@ -70,7 +100,7 @@ const UserDashboard = ({ setIsLoggedIn }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // IMPORTANT: Include cookies
+        credentials: 'include',
         body: JSON.stringify({ date })
       });
 
@@ -98,33 +128,44 @@ const UserDashboard = ({ setIsLoggedIn }) => {
     fetchPoopData();
   }, []);
 
+  // Update days since last poop whenever poopDates changes
+  useEffect(() => {
+    setDaysSinceLastPoop(calculateDaysSinceLastPoop());
+  }, [poopDates]);
+
   const handleLogout = async () => {
     try {
-      // Call logout endpoint to clear server-side cookie
       await fetch('http://localhost:8000/api/auth/logout', {
         method: 'POST',
-        credentials: 'include' // IMPORTANT: Include cookies
+        credentials: 'include'
       });
 
-      // Remove any remaining localStorage items (cleanup)
       localStorage.removeItem('token');
       setIsLoggedIn(false);
     } catch (err) {
       console.error('Logout error:', err);
-      // Even if logout fails, still log out on frontend
       localStorage.removeItem('token');
       setIsLoggedIn(false);
     }
   };
 
   const handlePoopToday = async () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocal();
     if (!poopDates.includes(today)) {
       try {
+        // Play sound and show animation
+        playPoopSound();
+        setShowPoopAnimation(true);
+        
+        // Hide animation after 5 seconds
+        setTimeout(() => {
+          setShowPoopAnimation(false);
+        }, 5000);
+
         await savePoopRecord(today);
         setPoopDates([today, ...poopDates]);
         setShowSuccessAlert(true);
-        setTimeout(() => setShowSuccessAlert(false), 3000);
+        setTimeout(() => setShowSuccessAlert(false), 5000);
       } catch (err) {
         // Error is already handled in savePoopRecord
       }
@@ -135,14 +176,19 @@ const UserDashboard = ({ setIsLoggedIn }) => {
     if (poopDates.length === 0) return 0;
 
     const today = new Date();
-    const lastPoopDate = new Date(Math.max(...poopDates.map(date => new Date(date))));
-    const diffTime = today - lastPoopDate;
-    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    
+    // Sort dates in descending order and get the most recent
+    const sortedDates = [...poopDates].sort((a, b) => b.localeCompare(a));
+    const lastPoopDate = parseLocalDate(sortedDates[0]);
+    lastPoopDate.setHours(0, 0, 0, 0); // Reset time to start of day
+    
+    // Calculate difference in days
+    const diffTime = today.getTime() - lastPoopDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, diffDays); // Ensure non-negative
   };
-
-  useEffect(() => {
-    setDaysSinceLastPoop(calculateDaysSinceLastPoop());
-  }, [poopDates]);
 
   const renderCalendar = () => {
     const today = new Date();
@@ -215,28 +261,39 @@ const UserDashboard = ({ setIsLoggedIn }) => {
   const getStreakInfo = () => {
     if (poopDates.length === 0) return { current: 0, longest: 0 };
 
-    const sortedDates = [...poopDates].sort((a, b) => new Date(b) - new Date(a));
+    const sortedDates = [...poopDates].sort((a, b) => b.localeCompare(a));
     let currentStreak = 0;
     let longestStreak = 0;
     let tempStreak = 1;
 
     const today = new Date();
-    let checkDate = new Date(today);
+    today.setHours(0, 0, 0, 0);
 
+    // Check current streak starting from today
+    let checkDate = new Date(today);
+    
     for (let i = 0; i < 30; i++) {
-      const dateStr = checkDate.toISOString().split('T')[0];
-      if (sortedDates.includes(dateStr)) {
-        currentStreak++;
+      const checkDateStr = getDateString(checkDate);
+      
+      if (sortedDates.includes(checkDateStr)) {
+        if (currentStreak === 0 || i === currentStreak) {
+          currentStreak++;
+        } else {
+          break;
+        }
       } else if (currentStreak > 0) {
         break;
       }
+      
+      // Move to previous day
       checkDate.setDate(checkDate.getDate() - 1);
     }
 
+    // Calculate longest streak
     for (let i = 1; i < sortedDates.length; i++) {
-      const current = new Date(sortedDates[i]);
-      const previous = new Date(sortedDates[i - 1]);
-      const diffDays = Math.abs((previous - current) / (1000 * 60 * 60 * 24));
+      const current = parseLocalDate(sortedDates[i]);
+      const previous = parseLocalDate(sortedDates[i - 1]);
+      const diffDays = Math.abs((previous.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
 
       if (diffDays === 1) {
         tempStreak++;
@@ -248,6 +305,36 @@ const UserDashboard = ({ setIsLoggedIn }) => {
     longestStreak = Math.max(longestStreak, tempStreak);
 
     return { current: currentStreak, longest: longestStreak };
+  };
+
+  // Poop Animation Component
+  const PoopAnimation = () => {
+    const poops = Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      delay: Math.random() * 3,
+      duration: 1.5 + Math.random() * 3,
+      left: Math.random() * 100,
+      size: 15 + Math.random() * 25
+    }));
+
+    return (
+      <div className="poop-animation-container">
+        {poops.map(poop => (
+          <div
+            key={poop.id}
+            className="falling-poop"
+            style={{
+              left: `${poop.left}%`,
+              animationDelay: `${poop.delay}s`,
+              animationDuration: `${poop.duration}s`,
+              fontSize: `${poop.size}px`
+            }}
+          >
+            💩
+          </div>
+        ))}
+      </div>
+    );
   };
 
   if (loading) {
@@ -286,13 +373,15 @@ const UserDashboard = ({ setIsLoggedIn }) => {
     "July", "August", "September", "October", "November", "December"];
   const currentMonth = monthNames[new Date().getMonth()];
   const currentYear = new Date().getFullYear();
-  const todayString = new Date().toISOString().split('T')[0];
+  const todayString = getTodayLocal();
   const currentMonthPoops = poopDates.filter(date =>
     date.startsWith(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
   );
 
   return (
-    <Container fluid className="dashboard-container">
+    <Container fluid className="dashboard-container" style={{ position: 'relative', overflow: 'hidden' }}>
+      {showPoopAnimation && <PoopAnimation />}
+      
       <Container>
         {showSuccessAlert && (
           <Alert
@@ -474,7 +563,7 @@ const UserDashboard = ({ setIsLoggedIn }) => {
                   {poopDates.slice(0, 5).map((date, index) => (
                     <div key={index} className="recent-item">
                       <span className="me-2">💩</span>
-                      <span className="recent-date">{new Date(date).toLocaleDateString()}</span>
+                      <span className="recent-date">{new Date(date + 'T00:00:00').toLocaleDateString()}</span>
                     </div>
                   ))}
                   {poopDates.length === 0 && (
@@ -486,6 +575,52 @@ const UserDashboard = ({ setIsLoggedIn }) => {
           </Col>
         </Row>
       </Container>
+      
+      <style jsx>{`
+        .poop-animation-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 9999;
+          overflow: hidden;
+        }
+        
+        .falling-poop {
+          position: absolute;
+          top: -50px;
+          animation: fall linear infinite;
+          pointer-events: none;
+        }
+        
+        @keyframes fall {
+          0% {
+            transform: translateY(-100px) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(calc(100vh + 100px)) rotate(360deg);
+            opacity: 0.5;
+          }
+        }
+        
+        .poop-button {
+          position: relative;
+          overflow: hidden;
+          transition: all 0.3s ease;
+        }
+        
+        .poop-button:hover:not(:disabled) {
+          transform: scale(1.05);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .poop-button:active:not(:disabled) {
+          transform: scale(0.95);
+        }
+      `}</style>
     </Container>
   );
 };
