@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import AnimatedBackground from '../../components/AnimatedBackground';
 
-const UserLoginForm = ({ setIsLoggedIn }) => {
+const UserRegisterForm = ({ setIsLoggedIn }) => {
+  const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+      const width = window.innerWidth;
+      setIsMobile(width <= 768);
     };
     
     checkMobile();
@@ -21,40 +24,80 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
   // Mock navigate function for demo
   const navigate = (path) => console.log(`Navigating to: ${path}`);
 
+  const validateForm = () => {
+    if (!name.trim()) {
+      setError('Name is required');
+      return false;
+    }
+    if (!username.trim()) {
+      setError('Username is required');
+      return false;
+    }
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters long');
+      return false;
+    }
+    if (!password) {
+      setError('Password is required');
+      return false;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return false;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
     
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    
     try {
-      const response = await fetch('http://localhost:8000/api/auth/login', {
+      const response = await fetch('http://localhost:8000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // IMPORTANT: Include cookies
-        body: JSON.stringify({ username, password }),
+        credentials: 'include',
+        body: JSON.stringify({ name, username, password }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        throw new Error(errorData.message || 'Registration failed');
       }
 
       const data = await response.json();
-      console.log('Login successful:', data);
+      console.log('Registration successful:', data);
       
-      // Remove localStorage token storage
       if (setIsLoggedIn) setIsLoggedIn(true);
       navigate('/dashboard');
       
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err.message || 'Login failed. Please check your credentials.');
-      if (setIsLoggedIn) setIsLoggedIn(false);
+      console.error('Registration error:', err);
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const containerStyle = {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    padding: isMobile ? '20px' : '40px'
   };
 
   const cardStyle = {
@@ -99,9 +142,34 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
     justifyContent: 'center'
   };
 
+  const getPasswordStrength = (password) => {
+    if (!password) return { strength: 0, text: '', color: '#d1d5db' };
+    
+    let strength = 0;
+    if (password.length >= 6) strength += 1;
+    if (password.length >= 8) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[a-z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+    
+    if (strength <= 2) return { strength, text: 'Weak', color: '#ef4444' };
+    if (strength <= 4) return { strength, text: 'Medium', color: '#f59e0b' };
+    return { strength, text: 'Strong', color: '#10b981' };
+  };
+
+  const passwordStrength = getPasswordStrength(password);
+
   return (
+    <>
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     <AnimatedBackground>
-      {/* Login Card */}
+      {/* Register Card */}
       <div style={cardStyle}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
@@ -111,7 +179,7 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
             color: '#581c87',
             marginBottom: '8px',
             margin: 0
-          }}>Poop Tracker</h2>
+          }}>Join Poop Tracker</h2>
           <div style={{
             width: '64px',
             height: '4px',
@@ -123,7 +191,7 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
             color: '#7c3aed',
             margin: 0,
             fontSize: isMobile ? '0.9rem' : '1rem'
-          }}>Sign in to your account</p>
+          }}>Create your account</p>
         </div>
         
         {/* Error Alert */}
@@ -142,8 +210,8 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
         )}
         
         {/* Form */}
-        <form onSubmit={handleSubmit}>
-          {/* Username Field */}
+        <div onSubmit={handleSubmit}>
+          {/* Name Field */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{
               display: 'block',
@@ -151,13 +219,13 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
               color: '#581c87',
               marginBottom: '8px',
               fontSize: '14px'
-            }}>Username</label>
+            }}>Full Name</label>
             <input
               style={inputStyle}
               type="text"
-              placeholder="Enter your username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your full name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
               onFocus={(e) => {
                 e.target.style.backgroundColor = 'white';
@@ -172,22 +240,23 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
             />
           </div>
 
-          {/* Password Field */}
-          <div style={{ marginBottom: '24px' }}>
+          {/* Username Field */}
+          <div style={{ marginBottom: '16px' }}>
             <label style={{
               display: 'block',
               fontWeight: '500',
               color: '#581c87',
               marginBottom: '8px',
               fontSize: '14px'
-            }}>Password</label>
+            }}>Username</label>
             <input
               style={inputStyle}
-              type="password"  
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="text"
+              placeholder="Choose a username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
+              minLength={3}
               onFocus={(e) => {
                 e.target.style.backgroundColor = 'white';
                 e.target.style.borderColor = '#8b5cf6';
@@ -199,6 +268,111 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
                 e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
               }}
             />
+          </div>
+
+          {/* Password Field */}
+          <div style={{ marginBottom: '8px' }}>
+            <label style={{
+              display: 'block',
+              fontWeight: '500',
+              color: '#581c87',
+              marginBottom: '8px',
+              fontSize: '14px'
+            }}>Password</label>
+            <input
+              style={inputStyle}
+              type="password"  
+              placeholder="Create a password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              onFocus={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.borderColor = '#8b5cf6';
+                e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.backgroundColor = '#faf5ff';
+                e.target.style.borderColor = '#d8b4fe';
+                e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+              }}
+            />
+          </div>
+
+          {/* Password Strength Indicator */}
+          {password && (
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '4px'
+              }}>
+                <div style={{
+                  flex: 1,
+                  height: '4px',
+                  backgroundColor: '#e5e7eb',
+                  borderRadius: '2px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${(passwordStrength.strength / 6) * 100}%`,
+                    backgroundColor: passwordStrength.color,
+                    transition: 'all 0.3s ease'
+                  }}></div>
+                </div>
+                <span style={{
+                  fontSize: '12px',
+                  color: passwordStrength.color,
+                  fontWeight: '500'
+                }}>
+                  {passwordStrength.text}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Confirm Password Field */}
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{
+              display: 'block',
+              fontWeight: '500',
+              color: '#581c87',
+              marginBottom: '8px',
+              fontSize: '14px'
+            }}>Confirm Password</label>
+            <input
+              style={{
+                ...inputStyle,
+                borderColor: confirmPassword && password !== confirmPassword ? '#ef4444' : '#d8b4fe'
+              }}
+              type="password"  
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              onFocus={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.borderColor = confirmPassword && password !== confirmPassword ? '#ef4444' : '#8b5cf6';
+                e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.backgroundColor = '#faf5ff';
+                e.target.style.borderColor = confirmPassword && password !== confirmPassword ? '#ef4444' : '#d8b4fe';
+                e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+              }}
+            />
+            {confirmPassword && password !== confirmPassword && (
+              <p style={{
+                color: '#ef4444',
+                fontSize: '12px',
+                margin: '4px 0 0 0'
+              }}>
+                Passwords do not match
+              </p>
+            )}
           </div>
           
           {/* Submit Button */}
@@ -230,14 +404,14 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
                   animation: 'spin 1s linear infinite',
                   marginRight: '8px'
                 }}></div>
-                Signing in...
+                Creating Account...
               </>
             ) : (
-              'Sign In'
+              'Create Account'
             )}
           </button>
           
-          {/* Register Link */}
+          {/* Login Link */}
           <div style={{
             textAlign: 'center',
             marginTop: '16px'
@@ -246,20 +420,21 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
               color: '#7c3aed',
               fontSize: isMobile ? '0.8rem' : '0.875rem'
             }}>
-              Don't have an account?{' '}
-              <a href="/register" style={{
+              Already have an account?{' '}
+              <a href="/login" style={{
                 color: '#8b5cf6',
                 textDecoration: 'none',
                 fontWeight: '500'
               }}>
-                Register here
+                Sign in here
               </a>
             </small>
           </div>
-        </form>
+        </div>
       </div>
     </AnimatedBackground>
+    </>
   );
 };
 
-export default UserLoginForm;
+export default UserRegisterForm;

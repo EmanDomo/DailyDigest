@@ -4,7 +4,6 @@ import authenticateToken from '../middleware/auth.js';
 
 const router = express.Router();
 
-// ADD AUTHENTICATION MIDDLEWARE TO PROTECT ROUTES
 router.get('/', authenticateToken, poopController.getPoopRecords);
 router.post('/', authenticateToken, poopController.createPoopRecord);
 

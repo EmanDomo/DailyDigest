@@ -14,7 +14,6 @@ const User = {
     }
   },
 
-  // ✅ Add this for /me route
   async findById(id) {
     try {
       const [rows] = await db.execute(

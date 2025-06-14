@@ -1,6 +1,5 @@
 import db from '../config/db.js';
 
-// Get all users
 export const getUsers = async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM users');
@@ -10,7 +9,6 @@ export const getUsers = async (req, res) => {
   }
 };
 
-// Create new user
 export const createUser = async (req, res) => {
   const { name, email } = req.body;
   

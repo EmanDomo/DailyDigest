@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 const authenticateToken = (req, res, next) => {
   console.log('🔐 AUTH MIDDLEWARE DEBUG:');
   
-  // GET TOKEN FROM COOKIE INSTEAD OF HEADER
   const token = req.cookies.authToken;
 
   if (!token) {
