@@ -16,6 +16,27 @@ const UserDashboard = ({ setIsLoggedIn }) => {
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
   const [showPoopAnimation, setShowPoopAnimation] = useState(false);
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
+const [viewYear, setViewYear] = useState(new Date().getFullYear());
+
+const viewedMonthPoops = poopDates.filter(date =>
+  date.startsWith(`${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`)
+);
+
+const goToPreviousMonth = () => {
+  if (viewMonth === 0) {
+    setViewMonth(11);
+    setViewYear(viewYear - 1);
+  } else {
+    setViewMonth(viewMonth - 1);
+  }
+};
+
+const goToCurrentMonth = () => {
+  setViewMonth(new Date().getMonth());
+  setViewYear(new Date().getFullYear());
+};
+  
 
   // Create poop sound effect
 const playPoopSound = () => {
@@ -191,72 +212,70 @@ const playPoopSound = () => {
   };
 
   const renderCalendar = () => {
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    const firstDay = new Date(currentYear, currentMonth, 1);
-    const lastDay = new Date(currentYear, currentMonth + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
+  const today = new Date();
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  const lastDay = new Date(viewYear, viewMonth + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay();
 
-    const calendar = [];
-    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const calendar = [];
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    calendar.push(
-      <Row key="headers" className="text-center mb-2">
-        {weekDays.map(day => (
-          <Col key={day} className="calendar-header">
-            {day}
-          </Col>
-        ))}
-      </Row>
+  calendar.push(
+    <Row key="headers" className="text-center mb-2">
+      {weekDays.map(day => (
+        <Col key={day} className="calendar-header">
+          {day}
+        </Col>
+      ))}
+    </Row>
+  );
+
+  let week = [];
+  let dayCounter = 1;
+
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    week.push(<Col key={`empty-${i}`} />);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const hasPooped = poopDates.includes(dateString);
+    const isToday = day === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
+
+    week.push(
+      <Col key={day} className="p-1">
+        <div className={`calendar-day ${hasPooped ? 'poop-day' : ''} ${isToday ? 'today' : ''}`}>
+          <span className="small fw-bold">{day}</span>
+          {hasPooped && <span className="ms-1">💩</span>}
+        </div>
+      </Col>
     );
 
-    let week = [];
-    let dayCounter = 1;
-
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      week.push(<Col key={`empty-${i}`} />);
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const hasPooped = poopDates.includes(dateString);
-      const isToday = day === today.getDate();
-
-      week.push(
-        <Col key={day} className="p-1">
-          <div className={`calendar-day ${hasPooped ? 'poop-day' : ''} ${isToday ? 'today' : ''}`}>
-            <span className="small fw-bold">{day}</span>
-            {hasPooped && <span className="ms-1">💩</span>}
-          </div>
-        </Col>
-      );
-
-      if (week.length === 7) {
-        calendar.push(
-          <Row key={`week-${dayCounter}`} className="mb-1">
-            {week}
-          </Row>
-        );
-        week = [];
-        dayCounter++;
-      }
-    }
-
-    if (week.length > 0) {
-      while (week.length < 7) {
-        week.push(<Col key={`empty-end-${week.length}`} />);
-      }
+    if (week.length === 7) {
       calendar.push(
         <Row key={`week-${dayCounter}`} className="mb-1">
           {week}
         </Row>
       );
+      week = [];
+      dayCounter++;
     }
+  }
 
-    return calendar;
-  };
+  if (week.length > 0) {
+    while (week.length < 7) {
+      week.push(<Col key={`empty-end-${week.length}`} />);
+    }
+    calendar.push(
+      <Row key={`week-${dayCounter}`} className="mb-1">
+        {week}
+      </Row>
+    );
+  }
+
+  return calendar;
+};
 
   const getStreakInfo = () => {
     if (poopDates.length === 0) return { current: 0, longest: 0 };
@@ -370,9 +389,10 @@ const playPoopSound = () => {
 
   const streakInfo = getStreakInfo();
   const monthNames = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"];
-  const currentMonth = monthNames[new Date().getMonth()];
-  const currentYear = new Date().getFullYear();
+  "July", "August", "September", "October", "November", "December"];
+const currentMonth = new Date().getMonth();
+const currentYear = new Date().getFullYear();
+const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
   const todayString = getTodayLocal();
   const currentMonthPoops = poopDates.filter(date =>
     date.startsWith(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
@@ -484,21 +504,44 @@ const playPoopSound = () => {
           <Col lg={8} className="mb-4">
             <Card className="calendar-card">
               <Card.Header className="calendar-header-bg">
-                <Stack direction="horizontal" className="justify-content-between">
-                  <h4 className="mb-0 text-white">
-                    <span className="me-2">📅</span>
-                    {currentMonth} {currentYear}
-                  </h4>
-                  <Button
-                    variant="outline-light"
-                    size="sm"
-                    onClick={() => setShowCalendar(!showCalendar)}
-                    className="calendar-toggle"
-                  >
-                    {showCalendar ? 'Hide' : 'Show'} Calendar
-                  </Button>
-                </Stack>
-              </Card.Header>
+  <Stack direction="horizontal" className="justify-content-between">
+    <div className="d-flex align-items-center">
+      <h4 className="mb-0 text-white me-3">
+        <span className="me-2">📅</span>
+        {monthNames[viewMonth]} {viewYear}
+      </h4>
+      <div className="month-navigation">
+        <Button
+          variant="outline-light"
+          size="sm"
+          onClick={goToPreviousMonth}
+          className="me-2"
+          disabled={viewMonth === currentMonth - 1 && viewYear === currentYear}
+        >
+          ← Previous
+        </Button>
+        {!isCurrentMonth && (
+          <Button
+            variant="outline-light"
+            size="sm"
+            onClick={goToCurrentMonth}
+            className="me-2"
+          >
+            Current Month
+          </Button>
+        )}
+      </div>
+    </div>
+    <Button
+      variant="outline-light"
+      size="sm"
+      onClick={() => setShowCalendar(!showCalendar)}
+      className="calendar-toggle"
+    >
+      {showCalendar ? 'Hide' : 'Show'} Calendar
+    </Button>
+  </Stack>
+</Card.Header>
               <Card.Body>
                 {showCalendar ? (
                   <>
@@ -528,49 +571,49 @@ const playPoopSound = () => {
           <Col lg={4} className="mb-4">
             <Card className="stats-card">
               <Card.Header className="stats-header-bg">
-                <h5 className="mb-0 text-white">
-                  <span className="me-2">📊</span>
-                  This Month's Stats
-                </h5>
-              </Card.Header>
-              <Card.Body>
-                <ListGroup variant="flush">
-                  <ListGroup.Item className="stats-item">
-                    <span className="stats-label">Total Poops:</span>
-                    <Badge className="stats-badge" pill>
-                      {currentMonthPoops.length}
-                    </Badge>
-                  </ListGroup.Item>
+  <h5 className="mb-0 text-white">
+    <span className="me-2">📊</span>
+    {isCurrentMonth ? "This Month's Stats" : `${monthNames[viewMonth]} ${viewYear} Stats`}
+  </h5>
+</Card.Header>
+<Card.Body>
+  <ListGroup variant="flush">
+    <ListGroup.Item className="stats-item">
+      <span className="stats-label">Total Poops:</span>
+      <Badge className="stats-badge" pill>
+        {viewedMonthPoops.length}
+      </Badge>
+    </ListGroup.Item>
 
-                  <ListGroup.Item className="stats-item">
-                    <span className="stats-label">Average per Week:</span>
-                    <Badge className="stats-badge-alt" pill>
-                      {Math.round((currentMonthPoops.length / 4) * 10) / 10}
-                    </Badge>
-                  </ListGroup.Item>
+    <ListGroup.Item className="stats-item">
+      <span className="stats-label">Average per Week:</span>
+      <Badge className="stats-badge-alt" pill>
+        {Math.round((viewedMonthPoops.length / 4) * 10) / 10}
+      </Badge>
+    </ListGroup.Item>
 
-                  <ListGroup.Item className="stats-item">
-                    <span className="stats-label">Days This Month:</span>
-                    <Badge className="stats-badge-alt2" pill>
-                      {new Date().getDate()}
-                    </Badge>
-                  </ListGroup.Item>
-                </ListGroup>
+    <ListGroup.Item className="stats-item">
+      <span className="stats-label">Days in Month:</span>
+      <Badge className="stats-badge-alt2" pill>
+        {new Date(viewYear, viewMonth + 1, 0).getDate()}
+      </Badge>
+    </ListGroup.Item>
+  </ListGroup>
 
-                <hr className="stats-divider" />
-                <h6 className="recent-title">Recent Activity</h6>
-                <div className="small">
-                  {poopDates.slice(0, 5).map((date, index) => (
-                    <div key={index} className="recent-item">
-                      <span className="me-2">💩</span>
-                      <span className="recent-date">{new Date(date + 'T00:00:00').toLocaleDateString()}</span>
-                    </div>
-                  ))}
-                  {poopDates.length === 0 && (
-                    <p className="no-activity">No activity yet</p>
-                  )}
-                </div>
-              </Card.Body>
+  <hr className="stats-divider" />
+  <h6 className="recent-title">Activity in {monthNames[viewMonth]}</h6>
+  <div className="small">
+    {viewedMonthPoops.slice(0, 5).map((date, index) => (
+      <div key={index} className="recent-item">
+        <span className="me-2">💩</span>
+        <span className="recent-date">{new Date(date + 'T00:00:00').toLocaleDateString()}</span>
+      </div>
+    ))}
+    {viewedMonthPoops.length === 0 && (
+      <p className="no-activity">No activity in this month</p>
+    )}
+  </div>
+</Card.Body>
             </Card>
           </Col>
         </Row>
