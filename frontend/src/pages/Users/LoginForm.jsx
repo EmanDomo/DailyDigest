@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 import AnimatedBackground from '../../components/AnimatedBackground';
 import { API_BASE_URL } from "../../config";
 
-const UserLoginForm = ({ setIsLoggedIn }) => {
+function UserLoginForm({ setIsLoggedIn, onLoginSuccess }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -24,28 +24,32 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
   // Mock navigate function for demo
   const navigate = (path) => console.log(`Navigating to: ${path}`);
 
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   setIsLoading(true);
   setError('');
 
   try {
+    console.log('🔐 Attempting login to:', `${API_BASE_URL}/api/auth/login`);
+    
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // Send cookies
+      credentials: 'include',
       body: JSON.stringify({ username, password }),
     });
 
+    console.log('📨 Response status:', response.status);
+    
     const data = await response.json();
 
     if (!response.ok) {
       throw new Error(data.message || 'Login failed');
     }
 
-    console.log('Login successful:', data);
+    console.log('✅ Login successful:', data);
 
     // Show success alert
     await Swal.fire({
@@ -64,16 +68,22 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
       }
     });
 
-    // Set login state (optionally with user data)
-    if (setIsLoggedIn) setIsLoggedIn(true); // or pass data.user if needed
+    // IMPORTANT: Use the callback to update parent state instead of separate auth check
+    if (onLoginSuccess) {
+      onLoginSuccess(data.user);
+    } else if (setIsLoggedIn) {
+      setIsLoggedIn(true);
+    }
+
+    // Remove the extra auth check - this is causing the 401 error!
+    // The cookie needs time to be set properly in production
 
     // Redirect to dashboard
     navigate('/dashboard');
 
   } catch (err) {
-    console.error('Login error:', err);
+    console.error('❌ Login error:', err);
 
-    // Show error alert
     await Swal.fire({
       icon: 'error',
       title: 'Login Failed',

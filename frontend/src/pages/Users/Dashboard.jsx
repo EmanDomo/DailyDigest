@@ -67,15 +67,15 @@ const playPoopSound = () => {
     return `${year}-${month}-${day}`;
   };
 
-  useEffect(() => {
-    axios.get(`${API_BASE_URL}/api/auth/user`, { withCredentials: true })
-      .then(res => {
-        setUser(res.data);
-      })
-      .catch(err => {
-        console.log('Not logged in', err);
-      });
-  }, []);
+useEffect(() => {
+  // Only fetch data when user is available (passed from App.jsx)
+  if (user && user.id) {
+    console.log('✅ User available, fetching poop data:', user);
+    fetchPoopData();
+  } else {
+    console.log('⏳ Waiting for user data...');
+  }
+}, [user]); // Depend on the user prop from App.jsx
 
   // Fetch poop data from backend
   const fetchPoopData = async () => {
