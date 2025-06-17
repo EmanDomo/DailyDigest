@@ -12,7 +12,8 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
+  const [showPassword, setShowPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate(); // Replace the mock navigate function with this
 
   useEffect(() => {
@@ -118,16 +119,16 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    padding: isMobile ? '20px' : '40px'
+    padding: isMobile ? '10px' : '20px'
   };
 
   const cardStyle = {
     backgroundColor: 'white',
-    borderRadius: '20px',
+    borderRadius: '16px',
     boxShadow: '0 25px 50px -12px rgba(118, 75, 162, 0.4)',
-    padding: isMobile ? '24px' : '32px',
+    padding: isMobile ? '20px' : '24px',
     width: '100%',
-    maxWidth: isMobile ? '350px' : '400px',
+    maxWidth: isMobile ? '340px' : '380px',
     position: 'relative',
     zIndex: 10,
     border: '1px solid rgba(147, 51, 234, 0.1)'
@@ -135,15 +136,15 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
 
   const inputStyle = {
     width: '100%',
-    padding: '12px 16px',
-    borderRadius: '8px',
+    padding: '10px 14px',
+    borderRadius: '6px',
     border: '1px solid #d8b4fe',
     backgroundColor: '#faf5ff',
-    boxShadow: 'inset 0 2px 4px rgba(147, 51, 234, 0.1)',
-    fontSize: '16px', // Prevents zoom on iOS
+    boxShadow: 'inset 0 1px 2px rgba(147, 51, 234, 0.1)',
+    fontSize: '15px', // Prevents zoom on iOS
     transition: 'all 0.2s ease',
     outline: 'none',
-    marginBottom: '16px'
+    marginBottom: '8px'
   };
 
   const buttonStyle = {
@@ -175,25 +176,25 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
         {/* Register Card */}
         <div style={cardStyle}>
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
             <h2 style={{
-              fontSize: isMobile ? '1.5rem' : '2rem',
+              fontSize: isMobile ? '1.4rem' : '1.8rem',
               fontWeight: 'bold',
               color: '#581c87',
-              marginBottom: '8px',
+              marginBottom: '6px',
               margin: 0
-            }}>Join Poop Tracker</h2>
+            }}>Join Daily Digest Now!</h2>
             <div style={{
-              width: '64px',
-              height: '4px',
+              width: '56px',
+              height: '3px',
               background: 'linear-gradient(to right, #8b5cf6, #a855f7)',
-              margin: '8px auto 16px auto',
+              margin: '6px auto 12px auto',
               borderRadius: '2px'
             }}></div>
             <p style={{
               color: '#7c3aed',
               margin: 0,
-              fontSize: isMobile ? '0.9rem' : '1rem'
+              fontSize: isMobile ? '0.85rem' : '0.9rem'
             }}>Create your account</p>
           </div>
           
@@ -202,10 +203,10 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
             <div style={{
               backgroundColor: '#fdf2f8',
               color: '#be185d',
-              padding: '12px',
-              borderRadius: '8px',
-              marginBottom: '16px',
-              fontSize: '14px',
+              padding: '10px',
+              borderRadius: '6px',
+              marginBottom: '12px',
+              fontSize: '13px',
               border: '1px solid #f9a8d4'
             }}>
               {error}
@@ -215,13 +216,13 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
           {/* Form */}
           <form onSubmit={handleSubmit}>
             {/* Name Field */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <label style={{
                 display: 'block',
                 fontWeight: '500',
                 color: '#581c87',
-                marginBottom: '8px',
-                fontSize: '14px'
+                marginBottom: '4px',
+                fontSize: '13px'
               }}>Full Name</label>
               <input
                 style={inputStyle}
@@ -233,24 +234,24 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
                 onFocus={(e) => {
                   e.target.style.backgroundColor = 'white';
                   e.target.style.borderColor = '#8b5cf6';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+                  e.target.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.1), inset 0 1px 2px rgba(147, 51, 234, 0.1)';
                 }}
                 onBlur={(e) => {
                   e.target.style.backgroundColor = '#faf5ff';
                   e.target.style.borderColor = '#d8b4fe';
-                  e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+                  e.target.style.boxShadow = 'inset 0 1px 2px rgba(147, 51, 234, 0.1)';
                 }}
               />
             </div>
 
             {/* Username Field */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <label style={{
                 display: 'block',
                 fontWeight: '500',
                 color: '#581c87',
-                marginBottom: '8px',
-                fontSize: '14px'
+                marginBottom: '4px',
+                fontSize: '13px'
               }}>Username</label>
               <input
                 style={inputStyle}
@@ -263,86 +264,150 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
                 onFocus={(e) => {
                   e.target.style.backgroundColor = 'white';
                   e.target.style.borderColor = '#8b5cf6';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+                  e.target.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.1), inset 0 1px 2px rgba(147, 51, 234, 0.1)';
                 }}
                 onBlur={(e) => {
                   e.target.style.backgroundColor = '#faf5ff';
                   e.target.style.borderColor = '#d8b4fe';
-                  e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+                  e.target.style.boxShadow = 'inset 0 1px 2px rgba(147, 51, 234, 0.1)';
                 }}
               />
             </div>
 
             {/* Password Field */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{
-                display: 'block',
-                fontWeight: '500',
-                color: '#581c87',
-                marginBottom: '8px',
-                fontSize: '14px'
-              }}>Password</label>
-              <input
-                style={inputStyle}
-                type="password"  
-                placeholder="Create a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                onFocus={(e) => {
-                  e.target.style.backgroundColor = 'white';
-                  e.target.style.borderColor = '#8b5cf6';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.backgroundColor = '#faf5ff';
-                  e.target.style.borderColor = '#d8b4fe';
-                  e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
-                }}
-              />
-            </div>
+            <div style={{ marginBottom: '12px' }}>
+  <label style={{
+    display: 'block',
+    fontWeight: '500',
+    color: '#581c87',
+    marginBottom: '4px',
+    fontSize: '13px'
+  }}>Password</label>
+  <div style={{ position: 'relative' }}>
+    <input
+      style={{
+        ...inputStyle,
+        paddingRight: '40px'
+      }}
+      type={showPassword ? "text" : "password"}
+      placeholder="Create a password"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      required
+      minLength={6}
+      onFocus={(e) => {
+        e.target.style.backgroundColor = 'white';
+        e.target.style.borderColor = '#8b5cf6';
+        e.target.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.1), inset 0 1px 2px rgba(147, 51, 234, 0.1)';
+      }}
+      onBlur={(e) => {
+        e.target.style.backgroundColor = '#faf5ff';
+        e.target.style.borderColor = '#d8b4fe';
+        e.target.style.boxShadow = 'inset 0 1px 2px rgba(147, 51, 234, 0.1)';
+      }}
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      style={{
+        position: 'absolute',
+        right: '10px',
+        top: '10px',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        color: '#8b5cf6',
+        fontSize: '16px',
+        padding: '2px',
+        width: '20px',
+        height: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+      onMouseEnter={(e) => {
+        e.target.style.color = '#7c3aed';
+      }}
+      onMouseLeave={(e) => {
+        e.target.style.color = '#8b5cf6';
+      }}
+    >
+      {showPassword ? '🙈' : '👁️'}
+    </button>
+  </div>
+</div>
 
             {/* Confirm Password Field */}
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{
-                display: 'block',
-                fontWeight: '500',
-                color: '#581c87',
-                marginBottom: '8px',
-                fontSize: '14px'
-              }}>Confirm Password</label>
-              <input
-                style={{
-                  ...inputStyle,
-                  borderColor: confirmPassword && password !== confirmPassword ? '#ef4444' : '#d8b4fe'
-                }}
-                type="password"  
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                onFocus={(e) => {
-                  e.target.style.backgroundColor = 'white';
-                  e.target.style.borderColor = confirmPassword && password !== confirmPassword ? '#ef4444' : '#8b5cf6';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.backgroundColor = '#faf5ff';
-                  e.target.style.borderColor = confirmPassword && password !== confirmPassword ? '#ef4444' : '#d8b4fe';
-                  e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
-                }}
-              />
-              {confirmPassword && password !== confirmPassword && (
-                <p style={{
-                  color: '#ef4444',
-                  fontSize: '12px',
-                  margin: '4px 0 0 0'
-                }}>
-                  Passwords do not match
-                </p>
-              )}
-            </div>
+            <div style={{ marginBottom: '16px' }}>
+  <label style={{
+    display: 'block',
+    fontWeight: '500',
+    color: '#581c87',
+    marginBottom: '4px',
+    fontSize: '13px'
+  }}>Confirm Password</label>
+  <div style={{ position: 'relative' }}>
+    <input
+      style={{
+        ...inputStyle,
+        paddingRight: '40px',
+        borderColor: confirmPassword && password !== confirmPassword ? '#ef4444' : '#d8b4fe'
+      }}
+      type={showConfirmPassword ? "text" : "password"}
+      placeholder="Confirm your password"
+      value={confirmPassword}
+      onChange={(e) => setConfirmPassword(e.target.value)}
+      required
+      onFocus={(e) => {
+        e.target.style.backgroundColor = 'white';
+        e.target.style.borderColor = confirmPassword && password !== confirmPassword ? '#ef4444' : '#8b5cf6';
+        e.target.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.1), inset 0 1px 2px rgba(147, 51, 234, 0.1)';
+      }}
+      onBlur={(e) => {
+        e.target.style.backgroundColor = '#faf5ff';
+        e.target.style.borderColor = confirmPassword && password !== confirmPassword ? '#ef4444' : '#d8b4fe';
+        e.target.style.boxShadow = 'inset 0 1px 2px rgba(147, 51, 234, 0.1)';
+      }}
+    />
+    <button
+      type="button"
+      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+      style={{
+        position: 'absolute',
+        right: '10px',
+        top: '10px',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        color: '#8b5cf6',
+        fontSize: '16px',
+        padding: '2px',
+        width: '20px',
+        height: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+      onMouseEnter={(e) => {
+        e.target.style.color = '#7c3aed';
+      }}
+      onMouseLeave={(e) => {
+        e.target.style.color = '#8b5cf6';
+      }}
+    >
+      {showConfirmPassword ? '🙈' : '👁️'}
+    </button>
+  </div>
+  {confirmPassword && password !== confirmPassword && (
+    <p style={{
+      color: '#ef4444',
+      fontSize: '11px',
+      margin: '2px 0 0 0'
+    }}>
+      Passwords do not match
+    </p>
+  )}
+</div>
             
             {/* Submit Button */}
             <button 
@@ -365,8 +430,8 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
               {isLoading ? (
                 <>
                   <div style={{
-                    width: '20px',
-                    height: '20px',
+                    width: '18px',
+                    height: '18px',
                     border: '2px solid white',
                     borderTop: '2px solid transparent',
                     borderRadius: '50%',
@@ -383,11 +448,11 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
             {/* Login Link */}
             <div style={{
               textAlign: 'center',
-              marginTop: '16px'
+              marginTop: '12px'
             }}>
               <small style={{
                 color: '#7c3aed',
-                fontSize: isMobile ? '0.8rem' : '0.875rem'
+                fontSize: isMobile ? '0.75rem' : '0.8rem'
               }}>
                 Already have an account?{' '}
                 <button

@@ -1,14 +1,24 @@
-import { useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import UserLoginForm from './pages/Users/LoginForm'
-import UserDashboard from './pages/Users/Dashboard'
-import UserRegister from './pages/Users/RegisterForm'
+import UserLoginForm from './pages/Users/LoginForm';
+import UserDashboard from './pages/Users/Dashboard';
+import UserRegister from './pages/Users/RegisterForm';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const { isLoggedIn, isLoading, login, logout } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Router>
@@ -19,32 +29,28 @@ function App() {
             isLoggedIn ? (
               <Navigate to="/dashboard" replace />
             ) : (
-              <UserLoginForm setIsLoggedIn={setIsLoggedIn} />
+              <UserLoginForm setIsLoggedIn={login} />
             )
           }
         />
-
         <Route
           path="/dashboard"
           element={
             isLoggedIn ? (
-              <UserDashboard setIsLoggedIn={setIsLoggedIn} />
+              <UserDashboard setIsLoggedIn={logout} />
             ) : (
               <Navigate to="/" replace />
             )
           }
         />
-
         <Route
           path="/register"
-          element={<UserRegister setIsLoggedIn={setIsLoggedIn} />}
+          element={<UserRegister setIsLoggedIn={login} />}
         />
-
-
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

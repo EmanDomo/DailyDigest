@@ -9,6 +9,7 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -23,71 +24,75 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
   // Mock navigate function for demo
   const navigate = (path) => console.log(`Navigating to: ${path}`);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // IMPORTANT: Include cookies
-        body: JSON.stringify({ username, password }),
-      });
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError('');
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
-      }
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Send cookies
+      body: JSON.stringify({ username, password }),
+    });
 
-      const data = await response.json();
-      console.log('Login successful:', data);
-      
-      // Show success alert
-      await Swal.fire({
-        icon: 'success',
-        title: 'Login Successful!',
-        text: `Welcome back, ${username}!`,
-        confirmButtonText: 'Continue',
-        confirmButtonColor: '#8b5cf6',
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end',
-        customClass: {
-          popup: 'swal-success-popup'
-        }
-      });
-      
-      // Remove localStorage token storage
-      if (setIsLoggedIn) setIsLoggedIn(true);
-      navigate('/dashboard');
-      
-    } catch (err) {
-      console.error('Login error:', err);
-      
-      // Show error alert
-      await Swal.fire({
-        icon: 'error',
-        title: 'Login Failed',
-        text: err.message || 'Please check your credentials and try again.',
-        confirmButtonText: 'Try Again',
-        confirmButtonColor: '#8b5cf6',
-        customClass: {
-          popup: 'swal-error-popup'
-        }
-      });
-      
-      setError(err.message || 'Login failed. Please check your credentials.');
-      if (setIsLoggedIn) setIsLoggedIn(false);
-    } finally {
-      setIsLoading(false);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
     }
-  };
+
+    console.log('Login successful:', data);
+
+    // Show success alert
+    await Swal.fire({
+      icon: 'success',
+      title: 'Login Successful!',
+      text: `Welcome back, ${username}!`,
+      confirmButtonText: 'Continue',
+      confirmButtonColor: '#8b5cf6',
+      timer: 2000,
+      timerProgressBar: true,
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end',
+      customClass: {
+        popup: 'swal-success-popup'
+      }
+    });
+
+    // Set login state (optionally with user data)
+    if (setIsLoggedIn) setIsLoggedIn(true); // or pass data.user if needed
+
+    // Redirect to dashboard
+    navigate('/dashboard');
+
+  } catch (err) {
+    console.error('Login error:', err);
+
+    // Show error alert
+    await Swal.fire({
+      icon: 'error',
+      title: 'Login Failed',
+      text: err.message || 'Please check your credentials and try again.',
+      confirmButtonText: 'Try Again',
+      confirmButtonColor: '#8b5cf6',
+      customClass: {
+        popup: 'swal-error-popup'
+      }
+    });
+
+    setError(err.message || 'Login failed. Please check your credentials.');
+    if (setIsLoggedIn) setIsLoggedIn(false);
+
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const cardStyle = {
     backgroundColor: 'white',
@@ -157,7 +162,7 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
               color: '#581c87',
               marginBottom: '8px',
               margin: 0
-            }}>Poop Tracker</h2>
+            }}>Daily Digest</h2>
             <div style={{
               width: '64px',
               height: '4px',
@@ -220,32 +225,65 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
 
             {/* Password Field */}
             <div style={{ marginBottom: '24px' }}>
-              <label style={{
-                display: 'block',
-                fontWeight: '500',
-                color: '#581c87',
-                marginBottom: '8px',
-                fontSize: '14px'
-              }}>Password</label>
-              <input
-                style={inputStyle}
-                type="password"  
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                onFocus={(e) => {
-                  e.target.style.backgroundColor = 'white';
-                  e.target.style.borderColor = '#8b5cf6';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.backgroundColor = '#faf5ff';
-                  e.target.style.borderColor = '#d8b4fe';
-                  e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
-                }}
-              />
-            </div>
+  <label style={{
+    display: 'block',
+    fontWeight: '500',
+    color: '#581c87',
+    marginBottom: '8px',
+    fontSize: '14px'
+  }}>Password</label>
+  <div style={{ position: 'relative' }}>
+    <input
+      style={{
+        ...inputStyle,
+        paddingRight: '45px' // Make room for the eye icon
+      }}
+      type={showPassword ? "text" : "password"}
+      placeholder="Enter your password"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      required
+      onFocus={(e) => {
+        e.target.style.backgroundColor = 'white';
+        e.target.style.borderColor = '#8b5cf6';
+        e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+      }}
+      onBlur={(e) => {
+        e.target.style.backgroundColor = '#faf5ff';
+        e.target.style.borderColor = '#d8b4fe';
+        e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+      }}
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      style={{
+        position: 'absolute',
+        right: '12px',
+        top: '12px',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        color: '#8b5cf6',
+        fontSize: '18px',
+        padding: '4px',
+        width: '24px',
+        height: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+      onMouseEnter={(e) => {
+        e.target.style.color = '#7c3aed';
+      }}
+      onMouseLeave={(e) => {
+        e.target.style.color = '#8b5cf6';
+      }}
+    >
+      {showPassword ? '🙈' : '👁️'}
+    </button>
+  </div>
+</div>
             
             {/* Submit Button */}
             <button 
@@ -302,6 +340,20 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
                 </a>
               </small>
             </div>
+            {/* Developer Credit */}
+<div style={{
+  textAlign: 'center',
+  marginTop: '12px',
+  paddingTop: '12px'
+}}>
+  <small style={{
+    color: '#a855f7',
+    fontSize: '0.75rem',
+    opacity: 0.7
+  }}>
+    by Eman Domoos 👋
+  </small>
+</div>
           </form>
         </div>
       </AnimatedBackground>

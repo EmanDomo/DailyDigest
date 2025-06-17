@@ -421,7 +421,7 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
               <h1 className="dashboard-title">
                 <span className="me-2">💩</span>
                 {user ? (
-                  <>Welcome to Poop Tracker Dashboard, {user.name}</>
+                  <>Welcome to Daily Digest Dashboard, {user.name}!</>
                 ) : (
                   <>Loading...</>
                 )}
@@ -484,7 +484,10 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
           <Col>
             <Card className="action-card">
               <Card.Body className="text-center">
-                <h3 className="mb-3 action-title">Did you poop today?</h3>
+                <h3 className="mb-3 action-title">
+  Did you poop today? 😏💩👀
+</h3>
+
                 <Button
                   size="lg"
                   className={`poop-button ${poopDates.includes(todayString) ? 'disabled' : ''}`}
