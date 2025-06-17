@@ -1,101 +1,129 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/userModel.js';
+import User from '../models/authModel.js';
 
-export const login = async (req, res) => {
-  const { username, password } = req.body;
+const authController = {
+  login: async (req, res) => {
+    const { username, password } = req.body;
 
-  try {
-    // 1. Find user by username
-    const user = await User.findByUsername(username);
-
-    // 2. Check if user exists
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // 3. Compare passwords
-    if (user.password !== password) {
-      return res.status(401).json({ message: 'Invalid credentials' }); 
-    }
-
-    // 4. Generate JWT token
-    const token = jwt.sign(
-      {
-        user_id: user.user_id,
-        username: user.username,
-        role: user.role
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    console.log('✅ Token created for user_id:', user.user_id);
-
-    // 5. SET COOKIE INSTEAD OF RETURNING TOKEN
-    res.cookie('authToken', token, {
-      httpOnly: true,        // Prevents XSS attacks
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'lax',       // CSRF protection
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours in milliseconds
-    });
-
-    // 6. Return success without exposing token
-    res.json({
-      message: 'Login successful',
-      user: {
-        id: user.user_id,
-        username: user.username,
-        role: user.role
+    try {
+      const user = await User.findByUsername(username);
+      if (!user || user.password !== password) {
+        return res.status(401).json({ message: 'Invalid credentials' });
       }
-    });
 
-  } catch (error) {
-    console.error('❌ Login error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+      const token = jwt.sign(
+        {
+          user_id: user.user_id,
+          username: user.username,
+          role: user.role
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
 
-export const logout = async (req, res) => {
-  try {
-    // Clear the cookie
-    res.clearCookie('authToken', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax'
-    });
+      res.cookie('authToken', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000
+      });
 
-    res.json({ message: 'Logout successful' });
-  } catch (error) {
-    console.error('❌ Logout error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+      res.json({
+        message: 'Login successful',
+        user: {
+          id: user.user_id,
+          username: user.username,
+          role: user.role
+        }
+      });
 
-export const getLoggedInUser = async (req, res) => {
-  const token = req.cookies.authToken;
-  if (!token) {
-    return res.status(401).json({ message: 'Not authenticated' });
-  }
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  },
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Make sure this matches login
+  logout: async (req, res) => {
+    try {
+      res.clearCookie('authToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
 
-    // ✅ Note: Using decoded.user_id (not decoded.id)
-    const user = await User.findById(decoded.user_id);
+      res.json({ message: 'Logout successful' });
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  },
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+  getLoggedInUser: async (req, res) => {
+    const token = req.cookies.authToken;
+    if (!token) {
+      return res.status(401).json({ message: 'Not authenticated' });
     }
 
-   res.json({
-  id: user.user_id,
-  name: user.name,
-  username: user.username,
-  role: user.role
-});
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.user_id);
+
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({
+        id: user.user_id,
+        name: user.name,
+        username: user.username,
+        role: user.role
+      });
+
+    } catch (error) {
+      console.error('❌ Error verifying token:', error);
+      res.status(403).json({ message: 'Invalid or expired token' });
+    }
+  },
+
+  findByUsername: async (req, res) => {
+    const { username } = req.params;
+    try {
+      const user = await User.findByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error('❌ Error finding user by username:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  },
+
+ createUser: async (req, res) => {
+  try {
+    const { name, username, password } = req.body;
+
+    // Step 1: Check if the username already exists
+    const existingUser = await User.findByUsername(username);
+    if (existingUser) {
+      return res.status(409).json({ message: 'Username already taken' });
+    }
+
+    // Step 2: Create the new user
+    const newUser = await User.createUser(name, username, password);
+
+    res.status(201).json({
+      message: 'User created successfully',
+      user: newUser
+    });
 
   } catch (error) {
-    console.error('❌ Error verifying token:', error);
-    res.status(403).json({ message: 'Invalid or expired token' });
+    console.error('❌ Error creating user:', error);
+    res.status(500).json({ message: 'Server error' });
   }
+}
+
+
 };
+
+export default authController;

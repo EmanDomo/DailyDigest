@@ -6,6 +6,7 @@ import {
 import '../../styles/UserDashboard.css';
 import poopSoundFile from '../../assets/poopsound.mp3'; 
 import axios from 'axios';
+import { API_BASE_URL } from "../../config";
 
 const UserDashboard = ({ setIsLoggedIn }) => {
   const [poopDates, setPoopDates] = useState([]);
@@ -67,7 +68,7 @@ const playPoopSound = () => {
   };
 
   useEffect(() => {
-    axios.get('http://localhost:8000/api/auth/user', { withCredentials: true })
+    axios.get(`${API_BASE_URL}/api/auth/user`, { withCredentials: true })
       .then(res => {
         setUser(res.data);
       })
@@ -81,7 +82,7 @@ const playPoopSound = () => {
     try {
       setLoading(true);
 
-      const response = await fetch('http://localhost:8000/api/poop-records', {
+      const response = await fetch(`${API_BASE_URL}/api/poop-records/get-records`, {
         headers: {
           'Content-Type': 'application/json'
         },
@@ -116,7 +117,7 @@ const playPoopSound = () => {
   // Save poop record to backend
   const savePoopRecord = async (date) => {
     try {
-      const response = await fetch('http://localhost:8000/api/poop-records', {
+      const response = await fetch(`${API_BASE_URL}/api/poop-records/create-record`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,7 +157,7 @@ const playPoopSound = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:8000/api/auth/logout', {
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -532,14 +533,14 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
         )}
       </div>
     </div>
-    <Button
+    {/* <Button
       variant="outline-light"
       size="sm"
       onClick={() => setShowCalendar(!showCalendar)}
       className="calendar-toggle"
     >
       {showCalendar ? 'Hide' : 'Show'} Calendar
-    </Button>
+    </Button> */}
   </Stack>
 </Card.Header>
               <Card.Body>
@@ -548,7 +549,7 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
                     <div className="calendar">
                       {renderCalendar()}
                     </div>
-                    <div className="calendar-legend">
+                    {/* <div className="calendar-legend">
                       <div className="legend-item">
                         <div className="legend-color poop-legend"></div>
                         <span className="legend-text">Poop Day</span>
@@ -557,7 +558,7 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
                         <div className="legend-color today-legend"></div>
                         <span className="legend-text">Today</span>
                       </div>
-                    </div>
+                    </div> */}
                   </>
                 ) : (
                   <div className="calendar-hidden">

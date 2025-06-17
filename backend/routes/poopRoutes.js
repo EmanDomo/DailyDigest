@@ -4,7 +4,8 @@ import authenticateToken from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, poopController.getPoopRecords);
-router.post('/', authenticateToken, poopController.createPoopRecord);
+router.get('/get-records', authenticateToken, poopController.getPoopRecords);
+router.post('/create-record', authenticateToken, poopController.createPoopRecord);
 
 export default router;
+ 

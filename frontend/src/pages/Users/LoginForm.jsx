@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import AnimatedBackground from '../../components/AnimatedBackground';
+import { API_BASE_URL } from "../../config";
 
 const UserLoginForm = ({ setIsLoggedIn }) => {
   const [username, setUsername] = useState('');
@@ -27,7 +29,7 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:8000/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,12 +46,42 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
       const data = await response.json();
       console.log('Login successful:', data);
       
+      // Show success alert
+      await Swal.fire({
+        icon: 'success',
+        title: 'Login Successful!',
+        text: `Welcome back, ${username}!`,
+        confirmButtonText: 'Continue',
+        confirmButtonColor: '#8b5cf6',
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end',
+        customClass: {
+          popup: 'swal-success-popup'
+        }
+      });
+      
       // Remove localStorage token storage
       if (setIsLoggedIn) setIsLoggedIn(true);
       navigate('/dashboard');
       
     } catch (err) {
       console.error('Login error:', err);
+      
+      // Show error alert
+      await Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: err.message || 'Please check your credentials and try again.',
+        confirmButtonText: 'Try Again',
+        confirmButtonColor: '#8b5cf6',
+        customClass: {
+          popup: 'swal-error-popup'
+        }
+      });
+      
       setError(err.message || 'Login failed. Please check your credentials.');
       if (setIsLoggedIn) setIsLoggedIn(false);
     } finally {
@@ -100,165 +132,180 @@ const UserLoginForm = ({ setIsLoggedIn }) => {
   };
 
   return (
-    <AnimatedBackground>
-      {/* Login Card */}
-      <div style={cardStyle}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h2 style={{
-            fontSize: isMobile ? '1.5rem' : '2rem',
-            fontWeight: 'bold',
-            color: '#581c87',
-            marginBottom: '8px',
-            margin: 0
-          }}>Poop Tracker</h2>
-          <div style={{
-            width: '64px',
-            height: '4px',
-            background: 'linear-gradient(to right, #8b5cf6, #a855f7)',
-            margin: '8px auto 16px auto',
-            borderRadius: '2px'
-          }}></div>
-          <p style={{
-            color: '#7c3aed',
-            margin: 0,
-            fontSize: isMobile ? '0.9rem' : '1rem'
-          }}>Sign in to your account</p>
-        </div>
-        
-        {/* Error Alert */}
-        {error && (
-          <div style={{
-            backgroundColor: '#fdf2f8',
-            color: '#be185d',
-            padding: '12px',
-            borderRadius: '8px',
-            marginBottom: '16px',
-            fontSize: '14px',
-            border: '1px solid #f9a8d4'
-          }}>
-            {error}
-          </div>
-        )}
-        
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          {/* Username Field */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              fontWeight: '500',
-              color: '#581c87',
-              marginBottom: '8px',
-              fontSize: '14px'
-            }}>Username</label>
-            <input
-              style={inputStyle}
-              type="text"
-              placeholder="Enter your username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              onFocus={(e) => {
-                e.target.style.backgroundColor = 'white';
-                e.target.style.borderColor = '#8b5cf6';
-                e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.backgroundColor = '#faf5ff';
-                e.target.style.borderColor = '#d8b4fe';
-                e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
-              }}
-            />
-          </div>
+    <>
+      {/* Custom SweetAlert2 Styles */}
+      <style jsx>{`
+        .swal-success-popup {
+          border-left: 4px solid #10b981 !important;
+        }
+        .swal-error-popup {
+          border-left: 4px solid #ef4444 !important;
+        }
+        .swal2-toast {
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+        }
+      `}</style>
 
-          {/* Password Field */}
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{
-              display: 'block',
-              fontWeight: '500',
+      <AnimatedBackground>
+        {/* Login Card */}
+        <div style={cardStyle}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <h2 style={{
+              fontSize: isMobile ? '1.5rem' : '2rem',
+              fontWeight: 'bold',
               color: '#581c87',
               marginBottom: '8px',
-              fontSize: '14px'
-            }}>Password</label>
-            <input
-              style={inputStyle}
-              type="password"  
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              onFocus={(e) => {
-                e.target.style.backgroundColor = 'white';
-                e.target.style.borderColor = '#8b5cf6';
-                e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.backgroundColor = '#faf5ff';
-                e.target.style.borderColor = '#d8b4fe';
-                e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
-              }}
-            />
-          </div>
-          
-          {/* Submit Button */}
-          <button 
-            type="submit"
-            style={buttonStyle}
-            disabled={isLoading}
-            onMouseEnter={(e) => {
-              if (!isLoading) {
-                e.target.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)';
-                e.target.style.transform = 'scale(1.02)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isLoading) {
-                e.target.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
-                e.target.style.transform = 'scale(1)';
-              }
-            }}
-          >
-            {isLoading ? (
-              <>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  border: '2px solid white',
-                  borderTop: '2px solid transparent',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                  marginRight: '8px'
-                }}></div>
-                Signing in...
-              </>
-            ) : (
-              'Sign In'
-            )}
-          </button>
-          
-          {/* Register Link */}
-          <div style={{
-            textAlign: 'center',
-            marginTop: '16px'
-          }}>
-            <small style={{
+              margin: 0
+            }}>Poop Tracker</h2>
+            <div style={{
+              width: '64px',
+              height: '4px',
+              background: 'linear-gradient(to right, #8b5cf6, #a855f7)',
+              margin: '8px auto 16px auto',
+              borderRadius: '2px'
+            }}></div>
+            <p style={{
               color: '#7c3aed',
-              fontSize: isMobile ? '0.8rem' : '0.875rem'
-            }}>
-              Don't have an account?{' '}
-              <a href="/register" style={{
-                color: '#8b5cf6',
-                textDecoration: 'none',
-                fontWeight: '500'
-              }}>
-                Register here
-              </a>
-            </small>
+              margin: 0,
+              fontSize: isMobile ? '0.9rem' : '1rem'
+            }}>Sign in to your account</p>
           </div>
-        </form>
-      </div>
-    </AnimatedBackground>
+          
+          {/* Error Alert - Keep as fallback */}
+          {error && (
+            <div style={{
+              backgroundColor: '#fdf2f8',
+              color: '#be185d',
+              padding: '12px',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              fontSize: '14px',
+              border: '1px solid #f9a8d4'
+            }}>
+              {error}
+            </div>
+          )}
+          
+          {/* Form */}
+          <form onSubmit={handleSubmit}>
+            {/* Username Field */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{
+                display: 'block',
+                fontWeight: '500',
+                color: '#581c87',
+                marginBottom: '8px',
+                fontSize: '14px'
+              }}>Username</label>
+              <input
+                style={inputStyle}
+                type="text"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                onFocus={(e) => {
+                  e.target.style.backgroundColor = 'white';
+                  e.target.style.borderColor = '#8b5cf6';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.backgroundColor = '#faf5ff';
+                  e.target.style.borderColor = '#d8b4fe';
+                  e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+                }}
+              />
+            </div>
+
+            {/* Password Field */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{
+                display: 'block',
+                fontWeight: '500',
+                color: '#581c87',
+                marginBottom: '8px',
+                fontSize: '14px'
+              }}>Password</label>
+              <input
+                style={inputStyle}
+                type="password"  
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                onFocus={(e) => {
+                  e.target.style.backgroundColor = 'white';
+                  e.target.style.borderColor = '#8b5cf6';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1), inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.backgroundColor = '#faf5ff';
+                  e.target.style.borderColor = '#d8b4fe';
+                  e.target.style.boxShadow = 'inset 0 2px 4px rgba(147, 51, 234, 0.1)';
+                }}
+              />
+            </div>
+            
+            {/* Submit Button */}
+            <button 
+              type="submit"
+              style={buttonStyle}
+              disabled={isLoading}
+              onMouseEnter={(e) => {
+                if (!isLoading) {
+                  e.target.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)';
+                  e.target.style.transform = 'scale(1.02)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isLoading) {
+                  e.target.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+                  e.target.style.transform = 'scale(1)';
+                }
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    border: '2px solid white',
+                    borderTop: '2px solid transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                    marginRight: '8px'
+                  }}></div>
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+            
+            {/* Register Link */}
+            <div style={{
+              textAlign: 'center',
+              marginTop: '16px'
+            }}>
+              <small style={{
+                color: '#7c3aed',
+                fontSize: isMobile ? '0.8rem' : '0.875rem'
+              }}>
+                Don't have an account?{' '}
+                <a href="/register" style={{
+                  color: '#8b5cf6',
+                  textDecoration: 'none',
+                  fontWeight: '500'
+                }}>
+                  Register here
+                </a>
+              </small>
+            </div>
+          </form>
+        </div>
+      </AnimatedBackground>
+    </>
   );
 };
 
