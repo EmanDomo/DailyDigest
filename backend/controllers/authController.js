@@ -73,40 +73,36 @@ logout: async (req, res) => {
   }
 },
 
-  getLoggedInUser: async (req, res) => {
-    console.log('🔍 GET LOGGED IN USER - Cookies received:', Object.keys(req.cookies));
-    
-    const token = req.cookies.authToken;
-    if (!token) {
-      console.log('❌ No authToken cookie found');
-      return res.status(401).json({ message: 'Not authenticated' });
+ getLoggedInUser: async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+
+  if (!token) {
+    return res.status(401).json({ message: 'Not authenticated' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.user_id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('✅ Token decoded:', { user_id: decoded.user_id, username: decoded.username });
-      
-      const user = await User.findById(decoded.user_id);
+    res.json({
+      id: user.user_id,
+      name: user.name,
+      username: user.username,
+      role: user.role
+    });
 
-      if (!user) {
-        console.log('❌ User not found in database for ID:', decoded.user_id);
-        return res.status(404).json({ message: 'User not found' });
-      }
+  } catch (error) {
+    console.error('❌ Error verifying token:', error);
+    res.status(403).json({ message: 'Invalid or expired token' });
+  }
+},
 
-      console.log('✅ User found:', { id: user.user_id, username: user.username });
-
-      res.json({
-        id: user.user_id,
-        name: user.name,
-        username: user.username,
-        role: user.role
-      });
-
-    } catch (error) {
-      console.error('❌ Error verifying token:', error);
-      res.status(403).json({ message: 'Invalid or expired token' });
-    }
-  },
 
   findByUsername: async (req, res) => {
     const { username } = req.params;

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import AnimatedBackground from '../../components/AnimatedBackground';
 import { API_BASE_URL } from "../../config";
+import { useNavigate } from 'react-router-dom';
 
 function UserLoginForm({ setIsLoggedIn, onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -10,6 +11,7 @@ function UserLoginForm({ setIsLoggedIn, onLoginSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate(); // Add this line
 
   useEffect(() => {
     const checkMobile = () => {
@@ -22,7 +24,6 @@ function UserLoginForm({ setIsLoggedIn, onLoginSuccess }) {
   }, []);
 
   // Mock navigate function for demo
-  const navigate = (path) => console.log(`Navigating to: ${path}`);
 
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -31,18 +32,17 @@ const handleSubmit = async (e) => {
 
   try {
     console.log('🔐 Attempting login to:', `${API_BASE_URL}/api/auth/login`);
-    
+
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
       body: JSON.stringify({ username, password }),
     });
 
     console.log('📨 Response status:', response.status);
-    
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -51,11 +51,12 @@ const handleSubmit = async (e) => {
 
     console.log('✅ Login successful:', data);
 
-    // Show success alert
+    // ✅ Store token in localStorage
+    localStorage.setItem('authToken', data.token);
+
     await Swal.fire({
       icon: 'success',
       title: 'Login Successful!',
-      text: `Welcome back, ${username}!`,
       confirmButtonText: 'Continue',
       confirmButtonColor: '#8b5cf6',
       timer: 2000,
@@ -68,17 +69,14 @@ const handleSubmit = async (e) => {
       }
     });
 
-    // IMPORTANT: Use the callback to update parent state instead of separate auth check
-    if (onLoginSuccess) {
-      onLoginSuccess(data.user);
-    } else if (setIsLoggedIn) {
-      setIsLoggedIn(true);
-    }
+    // Optional: If you're using onLoginSuccess or setIsLoggedIn
+    // In your handleSubmit function after successful login:
+if (onLoginSuccess) {
+  onLoginSuccess(data.user);
+} else if (setIsLoggedIn) {
+  setIsLoggedIn(true); // This will trigger the re-render
+}
 
-    // Remove the extra auth check - this is causing the 401 error!
-    // The cookie needs time to be set properly in production
-
-    // Redirect to dashboard
     navigate('/dashboard');
 
   } catch (err) {
@@ -102,6 +100,7 @@ const handleSubmit = async (e) => {
     setIsLoading(false);
   }
 };
+
 
 
   const cardStyle = {

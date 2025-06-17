@@ -31,7 +31,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import cookieParser from 'cookie-parser';
 import db from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import poopRoutes from './routes/poopRoutes.js';
@@ -42,65 +41,49 @@ const app = express();
 console.log('🌍 Environment:', process.env.NODE_ENV);
 console.log('🔑 JWT Secret exists:', !!process.env.JWT_SECRET);
 
-// Enhanced CORS configuration for production
+// ✅ CORS configuration with credentials support
 const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'https://dailydigestpoopy.netlify.app'
-    ];
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true, // Essential for cookies
+  origin: [
+    'http://localhost:5173',
+    'https://dailydigestpoopy.netlify.app'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Origin',
-    'X-Requested-With', 
-    'Content-Type', 
+    'X-Requested-With',
+    'Content-Type',
     'Accept',
-    'Authorization',
-    'Cookie'
+    'Authorization'
   ],
-  exposedHeaders: ['Set-Cookie'],
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  credentials: true, // ✅ This is the key addition you were missing
+  optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 
-// Middleware
+// ✅ Middleware
 app.use(express.json());
-app.use(cookieParser());
 
-// Add a middleware to log all incoming requests
+// 📨 Log requests (optional, but useful)
 app.use((req, res, next) => {
   console.log(`📨 ${req.method} ${req.path}`);
-  console.log('🍪 Cookies:', Object.keys(req.cookies));
-  console.log('🔍 Headers:', req.headers.origin);
+  console.log('🔍 Origin:', req.headers.origin);
   next();
 });
 
-// Routes
+// ✅ Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/poop-records', poopRoutes);
 
-// Test endpoint
+// ✅ Test endpoint
 app.get('/api/test', (req, res) => {
   res.json({ 
     message: 'Server is running!', 
-    env: process.env.NODE_ENV,
-    cookies: Object.keys(req.cookies)
+    env: process.env.NODE_ENV
   });
 });
 
-// Test PostgreSQL connection
+// ✅ Test PostgreSQL connection
 db.connect()
   .then(client => {
     console.log('✅ Connected to PostgreSQL');
@@ -108,7 +91,7 @@ db.connect()
   })
   .catch(err => console.error('❌ PostgreSQL connection failed:', err));
 
-// Start server
+// ✅ Start server
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

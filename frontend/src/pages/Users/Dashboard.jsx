@@ -77,74 +77,100 @@ useEffect(() => {
   }
 }, [user]); // Depend on the user prop from App.jsx
 
-  // Fetch poop data from backend
-  const fetchPoopData = async () => {
+useEffect(() => {
+  const fetchUserData = async () => {
     try {
-      setLoading(true);
-
-      const response = await fetch(`${API_BASE_URL}/api/poop-records/get-records`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/user`, {
         headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
       });
 
-      console.log('Response status:', response.status);
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      } else {
+        console.error('Failed to fetch user data');
       }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setPoopDates(data.dates);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching poop data:', err);
-      setError(`Failed to load data: ${err.message}`);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching user:', error);
     }
   };
+
+  fetchUserData();
+}, []);
+
+
+  // Fetch poop data from backend
+  const fetchPoopData = async () => {
+  try {
+    setLoading(true);
+
+    const response = await fetch(`${API_BASE_URL}/api/poop-records/get-records`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}` // ✅
+      }
+    });
+
+    console.log('Response status:', response.status);
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('Non-JSON response:', text.substring(0, 200));
+      throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    setPoopDates(data.dates);
+    setError(null);
+  } catch (err) {
+    console.error('Error fetching poop data:', err);
+    setError(`Failed to load data: ${err.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Save poop record to backend
   const savePoopRecord = async (date) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/poop-records/create-record`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ date })
-      });
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/poop-records/create-record`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}` // ✅
+      },
+      body: JSON.stringify({ date })
+    });
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (err) {
-      console.error('Error saving poop record:', err);
-      setError(`Failed to save: ${err.message}`);
-      throw err;
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('Non-JSON response:', text.substring(0, 200));
+      throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
     }
-  };
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error('Error saving poop record:', err);
+    setError(`Failed to save: ${err.message}`);
+    throw err;
+  }
+};
+
 
   useEffect(() => {
     fetchPoopData();
@@ -156,20 +182,23 @@ useEffect(() => {
   }, [poopDates]);
 
   const handleLogout = async () => {
-    try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
+  try {
+    // Optional: skip if your backend doesn't need this
+    await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}` // ✅ optional
+      }
+    });
+  } catch (err) {
+    console.error('Logout error:', err);
+  } finally {
+    localStorage.removeItem('authToken'); // ✅ updated key name
+    setIsLoggedIn(false); // Optional, depending on your App.jsx
+    window.location.href = '/'; // force logout redirect
+  }
+};
 
-      localStorage.removeItem('token');
-      setIsLoggedIn(false);
-    } catch (err) {
-      console.error('Logout error:', err);
-      localStorage.removeItem('token');
-      setIsLoggedIn(false);
-    }
-  };
 
   const handlePoopToday = async () => {
     const today = getTodayLocal();
