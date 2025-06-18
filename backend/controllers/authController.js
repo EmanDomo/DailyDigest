@@ -18,17 +18,22 @@ login: async (req, res) => {
         role: user.role
       },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '1h' }
     );
 
     // Updated cookie configuration
-    const cookieOptions = {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-    };
+ const cookieOptions = {
+  httpOnly: true,
+  maxAge: 60 * 60 * 1000, // 1 hour
+  path: '/',
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+};
+
+if (process.env.NODE_ENV === 'production') {
+  cookieOptions.domain = '.onrender.com';
+}
+
 
     // For production only - set domain
     if (process.env.NODE_ENV === 'production') {
