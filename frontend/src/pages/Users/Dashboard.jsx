@@ -102,18 +102,35 @@ useEffect(() => {
 
 
   // Fetch poop data from backend
-  const fetchPoopData = async () => {
+ const makeAuthenticatedRequest = async (url, options = {}) => {
+  const token = localStorage.getItem('authToken');
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...options.headers
+    }
+  });
+
+  // Check if token is expired
+  if (response.status === 401 || response.status === 403) {
+    localStorage.removeItem('authToken');
+    setIsLoggedIn(false);
+    window.location.href = '/';
+    throw new Error('Session expired');
+  }
+
+  return response;
+};
+
+// 5. Replace your existing fetch calls in UserDashboard.js
+const fetchPoopData = async () => {
   try {
     setLoading(true);
 
-    const response = await fetch(`${API_BASE_URL}/api/poop-records/get-records`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}` // ✅
-      }
-    });
-
-    console.log('Response status:', response.status);
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/api/poop-records/get-records`);
 
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -132,22 +149,18 @@ useEffect(() => {
     setError(null);
   } catch (err) {
     console.error('Error fetching poop data:', err);
-    setError(`Failed to load data: ${err.message}`);
+    if (err.message !== 'Session expired') {
+      setError(`Failed to load data: ${err.message}`);
+    }
   } finally {
     setLoading(false);
   }
 };
 
-
-  // Save poop record to backend
-  const savePoopRecord = async (date) => {
+const savePoopRecord = async (date) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/poop-records/create-record`, {
+    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/api/poop-records/create-record`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}` // ✅
-      },
       body: JSON.stringify({ date })
     });
 
@@ -166,7 +179,9 @@ useEffect(() => {
     return await response.json();
   } catch (err) {
     console.error('Error saving poop record:', err);
-    setError(`Failed to save: ${err.message}`);
+    if (err.message !== 'Session expired') {
+      setError(`Failed to save: ${err.message}`);
+    }
     throw err;
   }
 };
