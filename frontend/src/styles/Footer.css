@@ -1,0 +1,30 @@
+.landing-footer {
+  padding: 2rem 0;
+   margin-top: 6rem;
+  /* background: rgba(255, 255, 255, 0.05); */
+  /* backdrop-filter: blur(10px); */
+  /* border-top: 1px solid rgba(255, 255, 255, 0.1); */
+  animation: fadeInUp 0.8s ease-out 1.4s both;
+}
+
+.footer-attribution {
+  color: #000000;
+  font-size: 0.95rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.creator-name {
+  color: #667eea;
+  font-weight: 700;
+  background: #FFFFFF;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: all 0.3s ease;
+}
+
+.creator-name:hover {
+  transform: scale(1.05);
+  display: inline-block;
+}

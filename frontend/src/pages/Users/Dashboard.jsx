@@ -546,6 +546,27 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
               </Card.Body>
             </Card>
           </Col>
+            {/* <Col>
+            <Card className="action-card">
+              <Card.Body className="text-center">
+                <h3 className="mb-3 action-title">
+  Did you poop today? 😏💩👀
+</h3>
+
+                <Button
+                  size="lg"
+                  className={`poop-button ${poopDates.includes(todayString) ? 'disabled' : ''}`}
+                  onClick={handlePoopToday}
+                  disabled={poopDates.includes(todayString)}
+                >
+                  <span className="me-2">💩</span>
+                  {poopDates.includes(todayString)
+                    ? "Already recorded for today!"
+                    : "I Pooped Today!"}
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col> */}
         </Row>
 
         <Row>

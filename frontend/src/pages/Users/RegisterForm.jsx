@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Add this import
+import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../../components/AnimatedBackground';
+import Header from '../../components/Header';
 import Swal from 'sweetalert2';
 import { API_BASE_URL } from "../../config";
 
@@ -13,15 +14,15 @@ const UserRegisterForm = ({ setIsLoggedIn }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const navigate = useNavigate(); // Replace the mock navigate function with this
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkMobile = () => {
       const width = window.innerWidth;
       setIsMobile(width <= 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -58,13 +59,13 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
@@ -81,7 +82,6 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Success - show SweetAlert
       await Swal.fire({
         title: 'Registration Successful!',
         text: 'Your account has been created successfully.',
@@ -92,13 +92,11 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
         allowEscapeKey: false
       });
 
-      // Navigate to login page after clicking OK
-      navigate('/'); // This will now work properly
-      
+      navigate('/');
+
     } catch (err) {
       console.error('Registration error:', err);
-      
-      // Error - show SweetAlert
+
       await Swal.fire({
         title: 'Registration Failed',
         text: err.message || 'Registration failed. Please try again.',
@@ -106,7 +104,7 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
         confirmButtonText: 'Try Again',
         confirmButtonColor: '#ef4444'
       });
-      
+
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -141,7 +139,7 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     border: '1px solid #d8b4fe',
     backgroundColor: '#faf5ff',
     boxShadow: 'inset 0 1px 2px rgba(147, 51, 234, 0.1)',
-    fontSize: '15px', // Prevents zoom on iOS
+    fontSize: '15px',
     transition: 'all 0.2s ease',
     outline: 'none',
     marginBottom: '8px'
@@ -172,10 +170,9 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
           to { transform: rotate(360deg); }
         }
       `}</style>
+      <Header />
       <AnimatedBackground>
-        {/* Register Card */}
         <div style={cardStyle}>
-          {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '16px' }}>
             <h2 style={{
               fontSize: isMobile ? '1.4rem' : '1.8rem',
@@ -197,8 +194,7 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
               fontSize: isMobile ? '0.85rem' : '0.9rem'
             }}>Create your account</p>
           </div>
-          
-          {/* Error Alert */}
+
           {error && (
             <div style={{
               backgroundColor: '#fdf2f8',
@@ -212,10 +208,8 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
               {error}
             </div>
           )}
-          
-          {/* Form */}
+
           <form onSubmit={handleSubmit}>
-            {/* Name Field */}
             <div style={{ marginBottom: '12px' }}>
               <label style={{
                 display: 'block',
@@ -244,7 +238,6 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
               />
             </div>
 
-            {/* Username Field */}
             <div style={{ marginBottom: '12px' }}>
               <label style={{
                 display: 'block',
@@ -274,143 +267,140 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
               />
             </div>
 
-            {/* Password Field */}
             <div style={{ marginBottom: '12px' }}>
-  <label style={{
-    display: 'block',
-    fontWeight: '500',
-    color: '#581c87',
-    marginBottom: '4px',
-    fontSize: '13px'
-  }}>Password</label>
-  <div style={{ position: 'relative' }}>
-    <input
-      style={{
-        ...inputStyle,
-        paddingRight: '40px'
-      }}
-      type={showPassword ? "text" : "password"}
-      placeholder="Create a password"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      required
-      minLength={6}
-      onFocus={(e) => {
-        e.target.style.backgroundColor = 'white';
-        e.target.style.borderColor = '#8b5cf6';
-        e.target.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.1), inset 0 1px 2px rgba(147, 51, 234, 0.1)';
-      }}
-      onBlur={(e) => {
-        e.target.style.backgroundColor = '#faf5ff';
-        e.target.style.borderColor = '#d8b4fe';
-        e.target.style.boxShadow = 'inset 0 1px 2px rgba(147, 51, 234, 0.1)';
-      }}
-    />
-    <button
-      type="button"
-      onClick={() => setShowPassword(!showPassword)}
-      style={{
-        position: 'absolute',
-        right: '10px',
-        top: '10px',
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        color: '#8b5cf6',
-        fontSize: '16px',
-        padding: '2px',
-        width: '20px',
-        height: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-      onMouseEnter={(e) => {
-        e.target.style.color = '#7c3aed';
-      }}
-      onMouseLeave={(e) => {
-        e.target.style.color = '#8b5cf6';
-      }}
-    >
-      {showPassword ? '🙈' : '👁️'}
-    </button>
-  </div>
-</div>
+              <label style={{
+                display: 'block',
+                fontWeight: '500',
+                color: '#581c87',
+                marginBottom: '4px',
+                fontSize: '13px'
+              }}>Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  style={{
+                    ...inputStyle,
+                    paddingRight: '40px'
+                  }}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Create a password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  onFocus={(e) => {
+                    e.target.style.backgroundColor = 'white';
+                    e.target.style.borderColor = '#8b5cf6';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.1), inset 0 1px 2px rgba(147, 51, 234, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.backgroundColor = '#faf5ff';
+                    e.target.style.borderColor = '#d8b4fe';
+                    e.target.style.boxShadow = 'inset 0 1px 2px rgba(147, 51, 234, 0.1)';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '10px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#8b5cf6',
+                    fontSize: '16px',
+                    padding: '2px',
+                    width: '20px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.color = '#7c3aed';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.color = '#8b5cf6';
+                  }}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
 
-            {/* Confirm Password Field */}
             <div style={{ marginBottom: '16px' }}>
-  <label style={{
-    display: 'block',
-    fontWeight: '500',
-    color: '#581c87',
-    marginBottom: '4px',
-    fontSize: '13px'
-  }}>Confirm Password</label>
-  <div style={{ position: 'relative' }}>
-    <input
-      style={{
-        ...inputStyle,
-        paddingRight: '40px',
-        borderColor: confirmPassword && password !== confirmPassword ? '#ef4444' : '#d8b4fe'
-      }}
-      type={showConfirmPassword ? "text" : "password"}
-      placeholder="Confirm your password"
-      value={confirmPassword}
-      onChange={(e) => setConfirmPassword(e.target.value)}
-      required
-      onFocus={(e) => {
-        e.target.style.backgroundColor = 'white';
-        e.target.style.borderColor = confirmPassword && password !== confirmPassword ? '#ef4444' : '#8b5cf6';
-        e.target.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.1), inset 0 1px 2px rgba(147, 51, 234, 0.1)';
-      }}
-      onBlur={(e) => {
-        e.target.style.backgroundColor = '#faf5ff';
-        e.target.style.borderColor = confirmPassword && password !== confirmPassword ? '#ef4444' : '#d8b4fe';
-        e.target.style.boxShadow = 'inset 0 1px 2px rgba(147, 51, 234, 0.1)';
-      }}
-    />
-    <button
-      type="button"
-      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-      style={{
-        position: 'absolute',
-        right: '10px',
-        top: '10px',
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        color: '#8b5cf6',
-        fontSize: '16px',
-        padding: '2px',
-        width: '20px',
-        height: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-      onMouseEnter={(e) => {
-        e.target.style.color = '#7c3aed';
-      }}
-      onMouseLeave={(e) => {
-        e.target.style.color = '#8b5cf6';
-      }}
-    >
-      {showConfirmPassword ? '🙈' : '👁️'}
-    </button>
-  </div>
-  {confirmPassword && password !== confirmPassword && (
-    <p style={{
-      color: '#ef4444',
-      fontSize: '11px',
-      margin: '2px 0 0 0'
-    }}>
-      Passwords do not match
-    </p>
-  )}
-</div>
-            
-            {/* Submit Button */}
-            <button 
+              <label style={{
+                display: 'block',
+                fontWeight: '500',
+                color: '#581c87',
+                marginBottom: '4px',
+                fontSize: '13px'
+              }}>Confirm Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  style={{
+                    ...inputStyle,
+                    paddingRight: '40px',
+                    borderColor: confirmPassword && password !== confirmPassword ? '#ef4444' : '#d8b4fe'
+                  }}
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  onFocus={(e) => {
+                    e.target.style.backgroundColor = 'white';
+                    e.target.style.borderColor = confirmPassword && password !== confirmPassword ? '#ef4444' : '#8b5cf6';
+                    e.target.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.1), inset 0 1px 2px rgba(147, 51, 234, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.backgroundColor = '#faf5ff';
+                    e.target.style.borderColor = confirmPassword && password !== confirmPassword ? '#ef4444' : '#d8b4fe';
+                    e.target.style.boxShadow = 'inset 0 1px 2px rgba(147, 51, 234, 0.1)';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '10px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#8b5cf6',
+                    fontSize: '16px',
+                    padding: '2px',
+                    width: '20px',
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.color = '#7c3aed';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.color = '#8b5cf6';
+                  }}
+                >
+                  {showConfirmPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+              {confirmPassword && password !== confirmPassword && (
+                <p style={{
+                  color: '#ef4444',
+                  fontSize: '11px',
+                  margin: '2px 0 0 0'
+                }}>
+                  Passwords do not match
+                </p>
+              )}
+            </div>
+
+            <button
               type="submit"
               style={buttonStyle}
               disabled={isLoading}
@@ -444,8 +434,7 @@ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
                 'Create Account'
               )}
             </button>
-            
-            {/* Login Link */}
+
             <div style={{
               textAlign: 'center',
               marginTop: '12px'

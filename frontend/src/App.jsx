@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { setupAxiosInterceptors } from './utils/auth';
 import { API_BASE_URL } from './config';
 
+import LandingPage from './pages/Users/LandingPage';
 import UserLoginForm from './pages/Users/LoginForm';
 import UserDashboard from './pages/Users/Dashboard';
 import UserRegister from './pages/Users/RegisterForm';
@@ -17,7 +18,7 @@ function App() {
   useEffect(() => {
     const validateToken = async () => {
       const token = localStorage.getItem('authToken');
-      
+
       if (!token) {
         setIsLoggedIn(false);
         setIsLoading(false);
@@ -34,7 +35,6 @@ function App() {
         if (response.ok) {
           setIsLoggedIn(true);
         } else {
-          // Token is invalid or expired
           localStorage.removeItem('authToken');
           setIsLoggedIn(false);
         }
@@ -51,10 +51,9 @@ function App() {
     setupAxiosInterceptors(setIsLoggedIn);
   }, []);
 
-  // Show loading while validating token
   if (isLoading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{height: '100vh'}}>
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -65,8 +64,10 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
+
         <Route
-          path="/"
+          path="/login"
           element={
             isLoggedIn ? (
               <Navigate to="/dashboard" replace />
@@ -82,11 +83,10 @@ function App() {
             isLoggedIn ? (
               <UserDashboard setIsLoggedIn={setIsLoggedIn} />
             ) : (
-              <Navigate to="/" replace />
+              <Navigate to="/login" replace />
             )
           }
         />
-
         <Route path="/register" element={<UserRegister />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
