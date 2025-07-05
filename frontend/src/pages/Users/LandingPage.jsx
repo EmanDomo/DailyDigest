@@ -15,9 +15,6 @@ const App = () => {
         <Row className="hero-section align-items-center min-vh-100">
           <Col md={6} className="text-center text-md-start">
             <div className="hero-content">
-              <div className="hero-badge">
-                <span className="badge-text">✨ Health Tracking Made Fun</span>
-              </div>
               
               <h1 className="hero-title">
                 Welcome to <span className="brand-highlight">Daily Digest</span>

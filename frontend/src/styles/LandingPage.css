@@ -15,25 +15,6 @@
   z-index: 3;
 }
 
-/* Hero Badge */
-.hero-badge {
-  display: inline-block;
-  margin-bottom: 1.5rem;
-  animation: fadeInUp 0.8s ease-out;
-}
-
-.badge-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 50px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
 /* Hero Title */
 .hero-title {
   font-size: clamp(2.5rem, 5vw, 4rem);
