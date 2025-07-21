@@ -546,7 +546,7 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
               </Card.Body>
             </Card>
           </Col>
-            {/* <Col>
+            <Col>
             <Card className="action-card">
               <Card.Body className="text-center">
                 <h3 className="mb-3 action-title">
@@ -566,7 +566,7 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
                 </Button>
               </Card.Body>
             </Card>
-          </Col> */}
+          </Col>
         </Row>
 
         <Row>

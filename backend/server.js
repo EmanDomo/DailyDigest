@@ -1,3 +1,5 @@
+// ===============MYSQL===============
+
 // import express from 'express';
 // import cors from 'cors';
 // import dotenv from 'dotenv';
@@ -28,6 +30,8 @@
 
 // const PORT = process.env.PORT || 8000;
 // app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// ===============POSTGRESQL===============
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -41,7 +45,7 @@ const app = express();
 console.log('🌍 Environment:', process.env.NODE_ENV);
 console.log('🔑 JWT Secret exists:', !!process.env.JWT_SECRET);
 
-// ✅ CORS configuration with credentials support
+//CORS configuration with credentials support
 const corsOptions = {
   origin: [
     'http://localhost:5173',
@@ -55,27 +59,27 @@ const corsOptions = {
     'Accept',
     'Authorization'
   ],
-  credentials: true, // ✅ This is the key addition you were missing
+  credentials: true,
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 
-// ✅ Middleware
+//Middleware
 app.use(express.json());
 
-// 📨 Log requests (optional, but useful)
+//Log requests (optional, but useful)
 app.use((req, res, next) => {
   console.log(`📨 ${req.method} ${req.path}`);
   console.log('🔍 Origin:', req.headers.origin);
   next();
 });
 
-// ✅ Routes
+//Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/poop-records', poopRoutes);
 
-// ✅ Test endpoint
+//Test endpoint
 app.get('/api/test', (req, res) => {
   res.json({ 
     message: 'Server is running!', 
@@ -83,7 +87,7 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// ✅ Test PostgreSQL connection
+//Test PostgreSQL connection
 db.connect()
   .then(client => {
     console.log('✅ Connected to PostgreSQL');
@@ -91,7 +95,7 @@ db.connect()
   })
   .catch(err => console.error('❌ PostgreSQL connection failed:', err));
 
-// ✅ Start server
+//Start server
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
