@@ -14,7 +14,6 @@ const poopController = {
       res.status(500).json({ message: 'Server error' });
     }
   },
-
   createPoopRecord: async (req, res) => {
     try {
       // USE AUTHENTICATED USER ID FROM req.user
