@@ -606,47 +606,49 @@ const UserDashboard = ({ setIsLoggedIn }) => {
           </Col>
         </Row>
 
-        <Row className="mb-4">
-          <Col>
-            <Card className="action-card">
-              <Card.Body className="text-center">
-                <h3 className="mb-3 action-title">
-                  Did you poop today? 😏💩👀
-                </h3>
+<Row className="mb-4">
+  <Col xs={12} md={6} className="mb-3 mb-md-0">
+    <Card className="action-card">
+      <Card.Body className="text-center">
+        <h3 className="mb-3 action-title">
+          Did you poop today? 😏💩👀
+        </h3>
 
-                <Button
-                  size="lg"
-                  className={`poop-button ${poopDates.includes(todayString) ? 'disabled' : ''}`}
-                  onClick={handlePoopToday}
-                  disabled={poopDates.includes(todayString)}
-                >
-                  <span className="me-2">💩</span>
-                  {poopDates.includes(todayString)
-                    ? "Already recorded for today!"
-                    : "I Pooped Today!"}
-                </Button>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col>
-            <Card className="action-card">
-              <Card.Body className="text-center">
-                <h3 className="mb-3 action-title">
-                  Modify Calendar 📅📝
-                </h3>
+        <Button
+          size="lg"
+          className={`poop-button ${poopDates.includes(todayString) ? 'disabled' : ''}`}
+          onClick={handlePoopToday}
+          disabled={poopDates.includes(todayString)}
+        >
+          <span className="me-2">💩</span>
+          {poopDates.includes(todayString)
+            ? "Already recorded for today!"
+            : "I Pooped Today!"}
+        </Button>
+      </Card.Body>
+    </Card>
+  </Col>
 
-                <Button
-                  size="lg"
-                  className="poop-button"
-                  onClick={handleModifyPoopDate}
-                >
-                  <span className="me-2">📝</span>
-                  Modify Dates
-                </Button>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+  <Col xs={12} md={6}>
+    <Card className="action-card">
+      <Card.Body className="text-center">
+        <h3 className="mb-3 action-title">
+          Modify Calendar 📅📝
+        </h3>
+
+        <Button
+          size="lg"
+          className="poop-button"
+          onClick={handleModifyPoopDate}
+        >
+          <span className="me-2">📝</span>
+          Modify Dates
+        </Button>
+      </Card.Body>
+    </Card>
+  </Col>
+</Row>
+
 
         <Row>
           <Col lg={8} className="mb-4">
