@@ -4,11 +4,13 @@ import {
   Stack, Modal, ListGroup
 } from 'react-bootstrap';
 import '../../styles/UserDashboard.css';
-import poopSoundFile from '../../assets/poopsound.mp3'; 
+import poopSoundFile from '../../assets/poopsound.mp3';
 import axios from 'axios';
 import { API_BASE_URL } from "../../config";
 
 const UserDashboard = ({ setIsLoggedIn }) => {
+  
+  // ==================== STATE DECLARATIONS ====================
   const [poopDates, setPoopDates] = useState([]);
   const [daysSinceLastPoop, setDaysSinceLastPoop] = useState(0);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
@@ -18,34 +20,18 @@ const UserDashboard = ({ setIsLoggedIn }) => {
   const [user, setUser] = useState(null);
   const [showPoopAnimation, setShowPoopAnimation] = useState(false);
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
-const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  const [viewYear, setViewYear] = useState(new Date().getFullYear());
+  const [showModifyModal, setShowModifyModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [modifyAction, setModifyAction] = useState('');
 
-const viewedMonthPoops = poopDates.filter(date =>
-  date.startsWith(`${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`)
-);
+  // ==================== CONSTANTS ====================
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
 
-const goToPreviousMonth = () => {
-  if (viewMonth === 0) {
-    setViewMonth(11);
-    setViewYear(viewYear - 1);
-  } else {
-    setViewMonth(viewMonth - 1);
-  }
-};
-
-const goToCurrentMonth = () => {
-  setViewMonth(new Date().getMonth());
-  setViewYear(new Date().getFullYear());
-};
-  
-
-  // Create poop sound effect
-const playPoopSound = () => {
-  const audio = new Audio(poopSoundFile);
-  audio.volume = 1;
-  audio.play().catch(err => console.log('Audio play failed:', err));
-};
-
+  // ==================== UTILITY FUNCTIONS ====================
   const getTodayLocal = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -59,7 +45,6 @@ const playPoopSound = () => {
     return new Date(year, month - 1, day); // month is 0-indexed
   };
 
-  // Helper function to get date string for a specific date
   const getDateString = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -67,262 +52,160 @@ const playPoopSound = () => {
     return `${year}-${month}-${day}`;
   };
 
-useEffect(() => {
-  // Only fetch data when user is available (passed from App.jsx)
-  if (user && user.id) {
-    console.log('✅ User available, fetching poop data:', user);
-    fetchPoopData();
-  } else {
-    console.log('⏳ Waiting for user data...');
-  }
-}, [user]); // Depend on the user prop from App.jsx
+  const playPoopSound = () => {
+    const audio = new Audio(poopSoundFile);
+    audio.volume = 1;
+    audio.play().catch(err => console.log('Audio play failed:', err));
+  };
 
-useEffect(() => {
-  const fetchUserData = async () => {
+  // ==================== NAVIGATION FUNCTIONS ====================
+  const goToPreviousMonth = () => {
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  };
+
+  const goToCurrentMonth = () => {
+    setViewMonth(new Date().getMonth());
+    setViewYear(new Date().getFullYear());
+  };
+
+  // ==================== API FUNCTIONS ====================
+  const makeAuthenticatedRequest = async (url, options = {}) => {
+    const token = localStorage.getItem('authToken');
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      }
+    });
+
+    // Check if token is expired
+    if (response.status === 401 || response.status === 403) {
+      localStorage.removeItem('authToken');
+      setIsLoggedIn(false);
+      window.location.href = '/';
+      throw new Error('Session expired');
+    }
+
+    return response;
+  };
+
+  const fetchPoopData = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/user`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
+      setLoading(true);
+
+      const response = await makeAuthenticatedRequest(`${API_BASE_URL}/api/poop-records/get-records`);
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setPoopDates(data.dates);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching poop data:', err);
+      if (err.message !== 'Session expired') {
+        setError(`Failed to load data: ${err.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const savePoopRecord = async (date) => {
+    try {
+      const response = await makeAuthenticatedRequest(`${API_BASE_URL}/api/poop-records/create-record`, {
+        method: 'POST',
+        body: JSON.stringify({ date })
       });
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-      } else {
-        console.error('Failed to fetch user data');
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
       }
-    } catch (error) {
-      console.error('Error fetching user:', error);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.error('Error saving poop record:', err);
+      if (err.message !== 'Session expired') {
+        setError(`Failed to save: ${err.message}`);
+      }
+      throw err;
     }
   };
 
-  fetchUserData();
-}, []);
+  const deletePoopRecord = async (date) => {
+    try {
+      const response = await makeAuthenticatedRequest(`${API_BASE_URL}/api/poop-records/delete-record`, {
+        method: 'DELETE',
+        body: JSON.stringify({ date })
+      });
 
-
-  // Fetch poop data from backend
- const makeAuthenticatedRequest = async (url, options = {}) => {
-  const token = localStorage.getItem('authToken');
-  
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers
-    }
-  });
-
-  // Check if token is expired
-  if (response.status === 401 || response.status === 403) {
-    localStorage.removeItem('authToken');
-    setIsLoggedIn(false);
-    window.location.href = '/';
-    throw new Error('Session expired');
-  }
-
-  return response;
-};
-
-// 5. Replace your existing fetch calls in UserDashboard.js
-const fetchPoopData = async () => {
-  try {
-    setLoading(true);
-
-    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/api/poop-records/get-records`);
-
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('Non-JSON response:', text.substring(0, 200));
-      throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
-    }
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    setPoopDates(data.dates);
-    setError(null);
-  } catch (err) {
-    console.error('Error fetching poop data:', err);
-    if (err.message !== 'Session expired') {
-      setError(`Failed to load data: ${err.message}`);
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
-const savePoopRecord = async (date) => {
-  try {
-    const response = await makeAuthenticatedRequest(`${API_BASE_URL}/api/poop-records/create-record`, {
-      method: 'POST',
-      body: JSON.stringify({ date })
-    });
-
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('Non-JSON response:', text.substring(0, 200));
-      throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
-    }
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (err) {
-    console.error('Error saving poop record:', err);
-    if (err.message !== 'Session expired') {
-      setError(`Failed to save: ${err.message}`);
-    }
-    throw err;
-  }
-};
-
-
-  useEffect(() => {
-    fetchPoopData();
-  }, []);
-
-  // Update days since last poop whenever poopDates changes
-  useEffect(() => {
-    setDaysSinceLastPoop(calculateDaysSinceLastPoop());
-  }, [poopDates]);
-
-  const handleLogout = async () => {
-  try {
-    // Optional: skip if your backend doesn't need this
-    await fetch(`${API_BASE_URL}/api/auth/logout`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}` // ✅ optional
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        throw new Error(`Server returned ${contentType || 'unknown content type'} instead of JSON`);
       }
-    });
-  } catch (err) {
-    console.error('Logout error:', err);
-  } finally {
-    localStorage.removeItem('authToken'); // ✅ updated key name
-    setIsLoggedIn(false); // Optional, depending on your App.jsx
-    window.location.href = '/'; // force logout redirect
-  }
-};
 
-
-  const handlePoopToday = async () => {
-    const today = getTodayLocal();
-    if (!poopDates.includes(today)) {
-      try {
-        // Play sound and show animation
-        playPoopSound();
-        setShowPoopAnimation(true);
-        
-        // Hide animation after 5 seconds
-        setTimeout(() => {
-          setShowPoopAnimation(false);
-        }, 5000);
-
-        await savePoopRecord(today);
-        setPoopDates([today, ...poopDates]);
-        setShowSuccessAlert(true);
-        setTimeout(() => setShowSuccessAlert(false), 5000);
-      } catch (err) {
-        // Error is already handled in savePoopRecord
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
       }
+
+      return await response.json();
+    } catch (err) {
+      console.error('Error deleting poop record:', err);
+      if (err.message !== 'Session expired') {
+        setError(`Failed to delete: ${err.message}`);
+      }
+      throw err;
     }
   };
 
+  // ==================== CALCULATION FUNCTIONS ====================
   const calculateDaysSinceLastPoop = () => {
     if (poopDates.length === 0) return 0;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset time to start of day
-    
+
     // Sort dates in descending order and get the most recent
     const sortedDates = [...poopDates].sort((a, b) => b.localeCompare(a));
     const lastPoopDate = parseLocalDate(sortedDates[0]);
     lastPoopDate.setHours(0, 0, 0, 0); // Reset time to start of day
-    
+
     // Calculate difference in days
     const diffTime = today.getTime() - lastPoopDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return Math.max(0, diffDays); // Ensure non-negative
   };
 
-  const renderCalendar = () => {
-  const today = new Date();
-  const firstDay = new Date(viewYear, viewMonth, 1);
-  const lastDay = new Date(viewYear, viewMonth + 1, 0);
-  const daysInMonth = lastDay.getDate();
-  const startingDayOfWeek = firstDay.getDay();
-
-  const calendar = [];
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  calendar.push(
-    <Row key="headers" className="text-center mb-2">
-      {weekDays.map(day => (
-        <Col key={day} className="calendar-header">
-          {day}
-        </Col>
-      ))}
-    </Row>
-  );
-
-  let week = [];
-  let dayCounter = 1;
-
-  for (let i = 0; i < startingDayOfWeek; i++) {
-    week.push(<Col key={`empty-${i}`} />);
-  }
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const hasPooped = poopDates.includes(dateString);
-    const isToday = day === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
-
-    week.push(
-      <Col key={day} className="p-1">
-        <div className={`calendar-day ${hasPooped ? 'poop-day' : ''} ${isToday ? 'today' : ''}`}>
-          <span className="small fw-bold">{day}</span>
-          {hasPooped && <span className="ms-1">💩</span>}
-        </div>
-      </Col>
-    );
-
-    if (week.length === 7) {
-      calendar.push(
-        <Row key={`week-${dayCounter}`} className="mb-1">
-          {week}
-        </Row>
-      );
-      week = [];
-      dayCounter++;
-    }
-  }
-
-  if (week.length > 0) {
-    while (week.length < 7) {
-      week.push(<Col key={`empty-end-${week.length}`} />);
-    }
-    calendar.push(
-      <Row key={`week-${dayCounter}`} className="mb-1">
-        {week}
-      </Row>
-    );
-  }
-
-  return calendar;
-};
-
-  const getStreakInfo = () => {
+  function getStreakInfo() {
     if (poopDates.length === 0) return { current: 0, longest: 0 };
 
     const sortedDates = [...poopDates].sort((a, b) => b.localeCompare(a));
@@ -335,10 +218,10 @@ const savePoopRecord = async (date) => {
 
     // Check current streak starting from today
     let checkDate = new Date(today);
-    
+
     for (let i = 0; i < 30; i++) {
       const checkDateStr = getDateString(checkDate);
-      
+
       if (sortedDates.includes(checkDateStr)) {
         if (currentStreak === 0 || i === currentStreak) {
           currentStreak++;
@@ -348,7 +231,7 @@ const savePoopRecord = async (date) => {
       } else if (currentStreak > 0) {
         break;
       }
-      
+
       // Move to previous day
       checkDate.setDate(checkDate.getDate() - 1);
     }
@@ -369,6 +252,172 @@ const savePoopRecord = async (date) => {
     longestStreak = Math.max(longestStreak, tempStreak);
 
     return { current: currentStreak, longest: longestStreak };
+  }
+
+  // ==================== COMPUTED VALUES (after functions) ====================
+  const viewedMonthPoops = poopDates.filter(date =>
+    date.startsWith(`${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`)
+  );
+
+  const streakInfo = getStreakInfo();
+  const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
+  const todayString = getTodayLocal();
+  const currentMonthPoops = poopDates.filter(date =>
+    date.startsWith(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
+  );
+  const handleLogout = async () => {
+    try {
+      // Optional: skip if your backend doesn't need this
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}` // ✅ optional
+        }
+      });
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      localStorage.removeItem('authToken'); // ✅ updated key name
+      setIsLoggedIn(false); // Optional, depending on your App.jsx
+      window.location.href = '/'; // force logout redirect
+    }
+  };
+
+  const handlePoopToday = async () => {
+    const today = getTodayLocal();
+    if (!poopDates.includes(today)) {
+      try {
+        // Play sound and show animation
+        playPoopSound();
+        setShowPoopAnimation(true);
+
+        // Hide animation after 5 seconds
+        setTimeout(() => {
+          setShowPoopAnimation(false);
+        }, 5000);
+
+        await savePoopRecord(today);
+        setPoopDates([today, ...poopDates]);
+        setShowSuccessAlert(true);
+        setTimeout(() => setShowSuccessAlert(false), 5000);
+      } catch (err) {
+        // Error is already handled in savePoopRecord
+      }
+    }
+  };
+
+  const handleModifyPoopDate = () => {
+    // Remove the alert and just show the modal with instructions
+    setShowModifyModal(true);
+    setSelectedDate('');
+    setModifyAction('instruction');
+  };
+
+  const handleCalendarDayClick = (dateString) => {
+    const hasPooped = poopDates.includes(dateString);
+    setSelectedDate(dateString);
+    setModifyAction(hasPooped ? 'remove' : 'add');
+    setShowModifyModal(true);
+  };
+
+  const confirmModification = async () => {
+    try {
+      if (modifyAction === 'add') {
+        // Play sound and show animation for past dates too
+        playPoopSound();
+        setShowPoopAnimation(true);
+        setTimeout(() => setShowPoopAnimation(false), 3000);
+
+        await savePoopRecord(selectedDate);
+        setPoopDates(prevDates => {
+          if (!prevDates.includes(selectedDate)) {
+            return [selectedDate, ...prevDates].sort((a, b) => b.localeCompare(a));
+          }
+          return prevDates;
+        });
+      } else {
+        await deletePoopRecord(selectedDate);
+        setPoopDates(prevDates => prevDates.filter(d => d !== selectedDate));
+      }
+
+      setShowModifyModal(false);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 3000);
+    } catch (err) {
+      console.error('Error modifying record:', err);
+      // Error is already handled in the respective functions
+    }
+  };
+
+  // ==================== RENDER FUNCTIONS ====================
+  const renderCalendar = () => {
+    const today = new Date();
+    const firstDay = new Date(viewYear, viewMonth, 1);
+    const lastDay = new Date(viewYear, viewMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const calendar = [];
+    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    calendar.push(
+      <Row key="headers" className="text-center mb-2">
+        {weekDays.map(day => (
+          <Col key={day} className="calendar-header">
+            {day}
+          </Col>
+        ))}
+      </Row>
+    );
+
+    let week = [];
+    let dayCounter = 1;
+
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      week.push(<Col key={`empty-${i}`} />);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const hasPooped = poopDates.includes(dateString);
+      const isToday = day === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
+
+      week.push(
+        <Col key={day} className="p-1">
+          <div
+            className={`calendar-day ${hasPooped ? 'poop-day' : ''} ${isToday ? 'today' : ''} clickable-day`}
+            onClick={() => handleCalendarDayClick(dateString)}
+            style={{ cursor: 'pointer' }}
+          >
+            <span className="small fw-bold">{day}</span>
+            {hasPooped && <span className="ms-1">💩</span>}
+          </div>
+        </Col>
+      );
+
+      if (week.length === 7) {
+        calendar.push(
+          <Row key={`week-${dayCounter}`} className="mb-1">
+            {week}
+          </Row>
+        );
+        week = [];
+        dayCounter++;
+      }
+    }
+
+    if (week.length > 0) {
+      while (week.length < 7) {
+        week.push(<Col key={`empty-end-${week.length}`} />);
+      }
+      calendar.push(
+        <Row key={`week-${dayCounter}`} className="mb-1">
+          {week}
+        </Row>
+      );
+    }
+
+    return calendar;
   };
 
   // Poop Animation Component
@@ -401,6 +450,50 @@ const savePoopRecord = async (date) => {
     );
   };
 
+  // ==================== EFFECTS ====================
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/user`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        } else {
+          console.error('Failed to fetch user data');
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  useEffect(() => {
+    // Only fetch data when user is available (passed from App.jsx)
+    if (user && user.id) {
+      console.log('✅ User available, fetching poop data:', user);
+      fetchPoopData();
+    } else {
+      console.log('⏳ Waiting for user data...');
+    }
+  }, [user]); // Depend on the user prop from App.jsx
+
+  useEffect(() => {
+    fetchPoopData();
+  }, []);
+
+  // Update days since last poop whenever poopDates changes
+  useEffect(() => {
+    setDaysSinceLastPoop(calculateDaysSinceLastPoop());
+  }, [poopDates]);
+
+  // ==================== EARLY RETURNS ====================
   if (loading) {
     return (
       <Container fluid className="dashboard-container">
@@ -432,21 +525,10 @@ const savePoopRecord = async (date) => {
     );
   }
 
-  const streakInfo = getStreakInfo();
-  const monthNames = ["January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"];
-const currentMonth = new Date().getMonth();
-const currentYear = new Date().getFullYear();
-const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
-  const todayString = getTodayLocal();
-  const currentMonthPoops = poopDates.filter(date =>
-    date.startsWith(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`)
-  );
-
   return (
     <Container fluid className="dashboard-container" style={{ position: 'relative', overflow: 'hidden' }}>
       {showPoopAnimation && <PoopAnimation />}
-      
+
       <Container>
         {showSuccessAlert && (
           <Alert
@@ -529,8 +611,8 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
             <Card className="action-card">
               <Card.Body className="text-center">
                 <h3 className="mb-3 action-title">
-  Did you poop today? 😏💩👀
-</h3>
+                  Did you poop today? 😏💩👀
+                </h3>
 
                 <Button
                   size="lg"
@@ -546,23 +628,20 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
               </Card.Body>
             </Card>
           </Col>
-            <Col>
+          <Col>
             <Card className="action-card">
               <Card.Body className="text-center">
                 <h3 className="mb-3 action-title">
-  Did you poop today? 😏💩👀
-</h3>
+                  Modify Calendar 📅📝
+                </h3>
 
                 <Button
                   size="lg"
-                  className={`poop-button ${poopDates.includes(todayString) ? 'disabled' : ''}`}
-                  onClick={handlePoopToday}
-                  disabled={poopDates.includes(todayString)}
+                  className="poop-button"
+                  onClick={handleModifyPoopDate}
                 >
-                  <span className="me-2">💩</span>
-                  {poopDates.includes(todayString)
-                    ? "Already recorded for today!"
-                    : "I Pooped Today!"}
+                  <span className="me-2">📝</span>
+                  Modify Dates
                 </Button>
               </Card.Body>
             </Card>
@@ -573,35 +652,35 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
           <Col lg={8} className="mb-4">
             <Card className="calendar-card">
               <Card.Header className="calendar-header-bg">
-  <Stack direction="horizontal" className="justify-content-between">
-    <div className="d-flex align-items-center">
-      <h4 className="mb-0 text-white me-3">
-        <span className="me-2">📅</span>
-        {monthNames[viewMonth]} {viewYear}
-      </h4>
-      <div className="month-navigation">
-        <Button
-          variant="outline-light"
-          size="sm"
-          onClick={goToPreviousMonth}
-          className="me-2"
-          disabled={viewMonth === currentMonth - 1 && viewYear === currentYear}
-        >
-          ← Previous
-        </Button>
-        {!isCurrentMonth && (
-          <Button
-            variant="outline-light"
-            size="sm"
-            onClick={goToCurrentMonth}
-            className="me-2"
-          >
-            Current Month
-          </Button>
-        )}
-      </div>
-    </div>
-    {/* <Button
+                <Stack direction="horizontal" className="justify-content-between">
+                  <div className="d-flex align-items-center">
+                    <h4 className="mb-0 text-white me-3">
+                      <span className="me-2">📅</span>
+                      {monthNames[viewMonth]} {viewYear}
+                    </h4>
+                    <div className="month-navigation">
+                      <Button
+                        variant="outline-light"
+                        size="sm"
+                        onClick={goToPreviousMonth}
+                        className="me-2"
+                        disabled={viewMonth === currentMonth - 1 && viewYear === currentYear}
+                      >
+                        ← Previous
+                      </Button>
+                      {!isCurrentMonth && (
+                        <Button
+                          variant="outline-light"
+                          size="sm"
+                          onClick={goToCurrentMonth}
+                          className="me-2"
+                        >
+                          Current Month
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  {/* <Button
       variant="outline-light"
       size="sm"
       onClick={() => setShowCalendar(!showCalendar)}
@@ -609,8 +688,8 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
     >
       {showCalendar ? 'Hide' : 'Show'} Calendar
     </Button> */}
-  </Stack>
-</Card.Header>
+                </Stack>
+              </Card.Header>
               <Card.Body>
                 {showCalendar ? (
                   <>
@@ -640,54 +719,112 @@ const isCurrentMonth = viewMonth === currentMonth && viewYear === currentYear;
           <Col lg={4} className="mb-4">
             <Card className="stats-card">
               <Card.Header className="stats-header-bg">
-  <h5 className="mb-0 text-white">
-    <span className="me-2">📊</span>
-    {isCurrentMonth ? "This Month's Stats" : `${monthNames[viewMonth]} ${viewYear} Stats`}
-  </h5>
-</Card.Header>
-<Card.Body>
-  <ListGroup variant="flush">
-    <ListGroup.Item className="stats-item">
-      <span className="stats-label">Total Poops:</span>
-      <Badge className="stats-badge" pill>
-        {viewedMonthPoops.length}
-      </Badge>
-    </ListGroup.Item>
+                <h5 className="mb-0 text-white">
+                  <span className="me-2">📊</span>
+                  {isCurrentMonth ? "This Month's Stats" : `${monthNames[viewMonth]} ${viewYear} Stats`}
+                </h5>
+              </Card.Header>
+              <Card.Body>
+                <ListGroup variant="flush">
+                  <ListGroup.Item className="stats-item">
+                    <span className="stats-label">Total Poops:</span>
+                    <Badge className="stats-badge" pill>
+                      {viewedMonthPoops.length}
+                    </Badge>
+                  </ListGroup.Item>
 
-    <ListGroup.Item className="stats-item">
-      <span className="stats-label">Average per Week:</span>
-      <Badge className="stats-badge-alt" pill>
-        {Math.round((viewedMonthPoops.length / 4) * 10) / 10}
-      </Badge>
-    </ListGroup.Item>
+                  <ListGroup.Item className="stats-item">
+                    <span className="stats-label">Average per Week:</span>
+                    <Badge className="stats-badge-alt" pill>
+                      {Math.round((viewedMonthPoops.length / 4) * 10) / 10}
+                    </Badge>
+                  </ListGroup.Item>
 
-    <ListGroup.Item className="stats-item">
-      <span className="stats-label">Days in Month:</span>
-      <Badge className="stats-badge-alt2" pill>
-        {new Date(viewYear, viewMonth + 1, 0).getDate()}
-      </Badge>
-    </ListGroup.Item>
-  </ListGroup>
+                  <ListGroup.Item className="stats-item">
+                    <span className="stats-label">Days in Month:</span>
+                    <Badge className="stats-badge-alt2" pill>
+                      {new Date(viewYear, viewMonth + 1, 0).getDate()}
+                    </Badge>
+                  </ListGroup.Item>
+                </ListGroup>
 
-  <hr className="stats-divider" />
-  <h6 className="recent-title">Activity in {monthNames[viewMonth]}</h6>
-  <div className="small">
-    {viewedMonthPoops.slice(0, 5).map((date, index) => (
-      <div key={index} className="recent-item">
-        <span className="me-2">💩</span>
-        <span className="recent-date">{new Date(date + 'T00:00:00').toLocaleDateString()}</span>
-      </div>
-    ))}
-    {viewedMonthPoops.length === 0 && (
-      <p className="no-activity">No activity in this month</p>
-    )}
-  </div>
-</Card.Body>
+                <hr className="stats-divider" />
+                <h6 className="recent-title">Activity in {monthNames[viewMonth]}</h6>
+                <div className="small">
+                  {viewedMonthPoops.slice(0, 5).map((date, index) => (
+                    <div key={index} className="recent-item">
+                      <span className="me-2">💩</span>
+                      <span className="recent-date">{new Date(date + 'T00:00:00').toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                  {viewedMonthPoops.length === 0 && (
+                    <p className="no-activity">No activity in this month</p>
+                  )}
+                </div>
+              </Card.Body>
             </Card>
           </Col>
         </Row>
+        <Modal show={showModifyModal} onHide={() => setShowModifyModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>
+              {modifyAction === 'instruction' ? 'Modify Poop Records' :
+                modifyAction === 'add' ? 'Add Poop Record' : 'Remove Poop Record'}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {modifyAction === 'instruction' ? (
+              <div className="text-center">
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📅💩</div>
+                <p className="mb-3">
+                  <strong>Instructions:</strong><br />
+                  Click on any day in the calendar to add or remove a poop record for that date.
+                </p>
+                <ul className="text-start">
+                  <li>Days with 💩 emoji have existing records - click to remove</li>
+                  <li>Empty days - click to add a new record</li>
+                  <li>Today is highlighted with a border</li>
+                </ul>
+              </div>
+            ) : (
+              <div>
+                <p>
+                  {modifyAction === 'add'
+                    ? `Add a poop record for ${selectedDate}?`
+                    : `Remove the poop record for ${selectedDate}?`
+                  }
+                </p>
+                <div className="text-center my-3">
+                  <span style={{ fontSize: '3rem' }}>
+                    {modifyAction === 'add' ? '➕💩' : '❌💩'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            {modifyAction === 'instruction' ? (
+              <Button variant="primary" onClick={() => setShowModifyModal(false)}>
+                Got it!
+              </Button>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => setShowModifyModal(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant={modifyAction === 'add' ? 'success' : 'danger'}
+                  onClick={confirmModification}
+                >
+                  {modifyAction === 'add' ? 'Add Record' : 'Remove Record'}
+                </Button>
+              </>
+            )}
+          </Modal.Footer>
+        </Modal>
+
       </Container>
-      
+
       <style jsx>{`
         .poop-animation-container {
           position: fixed;

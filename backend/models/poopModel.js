@@ -87,7 +87,29 @@ const PoopModel = {
       console.error('Error creating record:', error);
       throw error;
     }
-  }
+  },
+
+  async deleteRecord(userId, date) {
+    console.log('Deleting record for user_id:', userId, 'date:', date);
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      throw new Error('Invalid date format. Expected YYYY-MM-DD');
+    }
+
+    try {
+      await db.query(
+        `DELETE FROM poop_records
+         WHERE user_id = $1 AND poop_date = $2`,
+        [userId, date]
+      );
+
+      console.log('Record deleted successfully');
+    } catch (error) {
+      console.error('Error deleting record:', error);
+      throw error;
+    }
+}
 };
 
 export default PoopModel;

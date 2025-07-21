@@ -302,3 +302,10 @@
     font-size: 0.9rem;
   }
 }
+
+.clickable-day:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+  border-radius: 4px;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}

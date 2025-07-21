@@ -32,7 +32,22 @@ const poopController = {
 
       res.status(500).json({ message: 'Server error' });
     }
-  }
+  },
+
+  deletePoopRecord: async (req, res) => {
+    try {
+      // USE AUTHENTICATED USER ID FROM req.user
+      const userId = req.user.id;
+      const { date } = req.body;
+
+      await PoopModel.deleteRecord(userId, date);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Error deleting poop record:', err);
+      res.status(500).json({ message: 'Server error' });
+    }
+
+}
 };
 
 export default poopController;
