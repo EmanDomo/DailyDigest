@@ -360,11 +360,15 @@ const UserDashboard = ({ setIsLoggedIn }) => {
     const calendar = [];
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+    // Header row with responsive day names
     calendar.push(
       <Row key="headers" className="text-center mb-2">
         {weekDays.map(day => (
-          <Col key={day} className="calendar-header">
-            {day}
+          <Col key={day} className="calendar-header p-0">
+            {/* Full day name on larger screens */}
+            <div className="d-none d-md-block">{day}</div>
+            {/* Single letter on mobile */}
+            <div className="d-md-none">{day.charAt(0)}</div>
           </Col>
         ))}
       </Row>
@@ -373,31 +377,33 @@ const UserDashboard = ({ setIsLoggedIn }) => {
     let week = [];
     let dayCounter = 1;
 
+    // Empty cells for days before the month starts
     for (let i = 0; i < startingDayOfWeek; i++) {
-      week.push(<Col key={`empty-${i}`} />);
+      week.push(<Col key={`empty-${i}`} className="p-0" />);
     }
 
+    // Calendar days
     for (let day = 1; day <= daysInMonth; day++) {
       const dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const hasPooped = poopDates.includes(dateString);
       const isToday = day === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
 
       week.push(
-        <Col key={day} className="p-1">
+        <Col key={day} className="p-0">
           <div
-            className={`calendar-day ${hasPooped ? 'poop-day' : ''} ${isToday ? 'today' : ''} clickable-day`}
+            className={`calendar-day ${hasPooped ? 'poop-day' : ''} ${isToday ? 'today' : ''}`}
             onClick={() => handleCalendarDayClick(dateString)}
-            style={{ cursor: 'pointer' }}
           >
-            <span className="small fw-bold">{day}</span>
-            {hasPooped && <span className="ms-1">💩</span>}
+            <span className="day-number">{day}</span>
+            {hasPooped && <span className="poop-emoji">💩</span>}
           </div>
         </Col>
       );
 
+      // Complete week, add to calendar
       if (week.length === 7) {
         calendar.push(
-          <Row key={`week-${dayCounter}`} className="mb-1">
+          <Row key={`week-${dayCounter}`} className="mb-2 g-2">
             {week}
           </Row>
         );
@@ -406,12 +412,13 @@ const UserDashboard = ({ setIsLoggedIn }) => {
       }
     }
 
+    // Fill remaining empty cells in the last week
     if (week.length > 0) {
       while (week.length < 7) {
-        week.push(<Col key={`empty-end-${week.length}`} />);
+        week.push(<Col key={`empty-end-${week.length}`} className="p-0" />);
       }
       calendar.push(
-        <Row key={`week-${dayCounter}`} className="mb-1">
+        <Row key={`week-${dayCounter}`} className="mb-2 g-2">
           {week}
         </Row>
       );
@@ -606,48 +613,48 @@ const UserDashboard = ({ setIsLoggedIn }) => {
           </Col>
         </Row>
 
-<Row className="mb-4">
-  <Col xs={12} md={6} className="mb-3 mb-md-0">
-    <Card className="action-card">
-      <Card.Body className="text-center">
-        <h3 className="mb-3 action-title">
-          Did you poop today? 😏💩👀
-        </h3>
+        <Row className="mb-4">
+          <Col xs={12} md={6} className="mb-3 mb-md-0">
+            <Card className="action-card">
+              <Card.Body className="text-center">
+                <h3 className="mb-3 action-title">
+                  Did you poop today? 😏💩👀
+                </h3>
 
-        <Button
-          size="lg"
-          className={`poop-button ${poopDates.includes(todayString) ? 'disabled' : ''}`}
-          onClick={handlePoopToday}
-          disabled={poopDates.includes(todayString)}
-        >
-          <span className="me-2">💩</span>
-          {poopDates.includes(todayString)
-            ? "Already recorded for today!"
-            : "I Pooped Today!"}
-        </Button>
-      </Card.Body>
-    </Card>
-  </Col>
+                <Button
+                  size="lg"
+                  className={`poop-button ${poopDates.includes(todayString) ? 'disabled' : ''}`}
+                  onClick={handlePoopToday}
+                  disabled={poopDates.includes(todayString)}
+                >
+                  <span className="me-2">💩</span>
+                  {poopDates.includes(todayString)
+                    ? "Already recorded for today!"
+                    : "I Pooped Today!"}
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
 
-  <Col xs={12} md={6}>
-    <Card className="action-card">
-      <Card.Body className="text-center">
-        <h3 className="mb-3 action-title">
-          Modify Calendar 📅📝
-        </h3>
+          <Col xs={12} md={6}>
+            <Card className="action-card">
+              <Card.Body className="text-center">
+                <h3 className="mb-3 action-title">
+                  Modify Calendar 📅📝
+                </h3>
 
-        <Button
-          size="lg"
-          className="poop-button"
-          onClick={handleModifyPoopDate}
-        >
-          <span className="me-2">📝</span>
-          Modify Dates
-        </Button>
-      </Card.Body>
-    </Card>
-  </Col>
-</Row>
+                <Button
+                  size="lg"
+                  className="poop-button"
+                  onClick={handleModifyPoopDate}
+                >
+                  <span className="me-2">📝</span>
+                  Modify Dates
+                </Button>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
 
 
         <Row>
