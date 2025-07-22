@@ -467,6 +467,306 @@
 }
 
 /* ========================================
+   MODAL CALENDAR RESPONSIVE STYLES
+   ======================================== */
+
+/* Modal Adjustments - Consistent mobile-like size */
+.modal-dialog {
+  max-width: 450px !important;
+  margin: 1rem auto !important;
+}
+
+.modal-content {
+  max-height: 85vh !important;
+  overflow: hidden !important;
+}
+
+.modal-body {
+  max-height: calc(85vh - 120px) !important;
+  overflow-y: auto !important;
+  padding: 1rem !important;
+}
+
+/* Calendar Container in Modal */
+.modal .calendar-day {
+  min-height: 50px;
+  font-size: 0.9rem;
+  padding: 4px;
+  margin-bottom: 2px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  gap: 2px;
+}
+
+.modal .calendar-day:hover {
+  background-color: rgba(139, 92, 246, 0.1);
+  transform: scale(1.03);
+  border-color: #a855f7;
+}
+
+.modal .calendar-day.poop-day {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+}
+
+.modal .calendar-day.today {
+  border: 2px solid #000000 !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.modal .calendar-day .day-number {
+  line-height: 1;
+  font-weight: 600;
+  margin: 0;
+  display: block;
+}
+
+.modal .calendar-day .poop-emoji {
+  font-size: 0.9rem;
+  line-height: 1;
+  margin: 0;
+  display: block;
+}
+
+.modal .calendar-header {
+  font-weight: bold;
+  font-size: 0.875rem;
+  color: #7c3aed;
+  padding: 8px 4px;
+  text-align: center;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* Tablet Responsive (768px and below) */
+@media (max-width: 768px) {
+  .modal-dialog {
+    max-width: 420px !important;
+    margin: 0.75rem auto !important;
+  }
+  
+  .modal-body {
+    padding: 0.75rem !important;
+  }
+  
+  .modal .calendar-header {
+    font-size: 0.8rem;
+    padding: 6px 2px;
+  }
+  
+  .modal .calendar-day {
+    min-height: 45px;
+    font-size: 0.85rem;
+    padding: 3px;
+    gap: 1px;
+  }
+  
+  .modal .calendar-day .day-number {
+    font-size: 0.9rem;
+  }
+  
+  .modal .calendar-day .poop-emoji {
+    font-size: 0.8rem;
+  }
+  
+  /* Instructions text size */
+  .modal-body p {
+    font-size: 0.9rem;
+  }
+  
+  .modal-body ul {
+    font-size: 0.85rem;
+  }
+}
+
+/* Small Mobile (576px and below) */
+@media (max-width: 576px) {
+  .modal-dialog {
+    max-width: 100vw !important;
+    margin: 0 !important;
+    height: 100vh !important;
+  }
+  
+  .modal-content {
+    height: 100vh !important;
+    border-radius: 0 !important;
+  }
+  
+  .modal-header {
+    padding: 0.75rem !important;
+  }
+  
+  .modal-header .modal-title {
+    font-size: 1.1rem !important;
+  }
+  
+  .modal-body {
+    padding: 0.5rem !important;
+    max-height: calc(100vh - 140px) !important;
+  }
+  
+  .modal-footer {
+    padding: 0.75rem !important;
+  }
+  
+  .modal .calendar-header {
+    font-size: 0.75rem;
+    padding: 4px 1px;
+  }
+  
+  .modal .calendar-day {
+    min-height: 40px;
+    font-size: 0.8rem;
+    padding: 2px;
+    border-radius: 4px;
+    gap: 1px;
+  }
+  
+  .modal .calendar-day .day-number {
+    font-size: 0.85rem;
+  }
+  
+  .modal .calendar-day .poop-emoji {
+    font-size: 0.7rem;
+  }
+  
+  .modal .calendar-day:hover {
+    transform: scale(1.02);
+  }
+  
+  /* Instructions adjustments for mobile */
+  .modal-body p {
+    font-size: 0.85rem;
+  }
+  
+  .modal-body ul {
+    font-size: 0.8rem;
+  }
+  
+  .modal-body div[style*="fontSize: '3rem'"] {
+    font-size: 2.5rem !important;
+  }
+  
+  /* Calendar container scrollable area */
+  .modal-body div[style*="maxHeight: '60vh'"] {
+    max-height: 50vh !important;
+  }
+}
+
+/* Extra Small Mobile (400px and below) */
+@media (max-width: 400px) {
+  .modal .calendar-header {
+    font-size: 0.7rem;
+    padding: 3px 1px;
+  }
+  
+  .modal .calendar-day {
+    min-height: 35px;
+    font-size: 0.75rem;
+    padding: 2px;
+    gap: 1px;
+  }
+  
+  .modal .calendar-day .day-number {
+    font-size: 0.8rem;
+  }
+  
+  .modal .calendar-day .poop-emoji {
+    font-size: 0.65rem;
+  }
+  
+  .modal .calendar-day.today {
+    border-width: 1px !important;
+  }
+  
+  /* Instructions further reduced */
+  .modal-body p {
+    font-size: 0.8rem;
+  }
+  
+  .modal-body ul {
+    font-size: 0.75rem;
+  }
+  
+  .modal-body div[style*="fontSize: '3rem'"] {
+    font-size: 2rem !important;
+  }
+  
+  /* Calendar container for very small screens */
+  .modal-body div[style*="maxHeight: '60vh'"] {
+    max-height: 45vh !important;
+  }
+}
+
+/* Portrait orientation specific adjustments */
+@media (orientation: portrait) and (max-width: 768px) {
+  .modal-body div[style*="maxHeight: '60vh'"] {
+    max-height: 55vh !important;
+  }
+}
+
+/* Landscape orientation for small screens */
+@media (orientation: landscape) and (max-height: 600px) {
+  .modal-dialog {
+    max-height: 100vh !important;
+  }
+  
+  .modal-body {
+    max-height: calc(100vh - 100px) !important;
+  }
+  
+  .modal-body div[style*="maxHeight: '60vh'"] {
+    max-height: 40vh !important;
+  }
+  
+  .modal .calendar-day {
+    min-height: 35px;
+  }
+}
+
+/* Fix for Bootstrap column gutters in modal */
+.modal .row {
+  margin-left: -2px !important;
+  margin-right: -2px !important;
+}
+
+.modal .col {
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+}
+
+/* Ensure calendar rows don't break */
+.modal .mb-1 {
+  margin-bottom: 0.25rem !important;
+}
+
+.modal .mb-2 {
+  margin-bottom: 0.5rem !important;
+}
+
+/* Calendar day empty states in modal */
+.modal .calendar-day-empty {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  cursor: default !important;
+}
+
+.modal .calendar-day-empty:hover {
+  background: transparent !important;
+  transform: none !important;
+  border-color: transparent !important;
+}
+
+/* ========================================
    8. LEGACY SUPPORT
    ======================================== */
 
