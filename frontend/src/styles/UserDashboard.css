@@ -200,8 +200,8 @@
 }
 
 .calendar-day.today {
-  border: 2px solid #a855f7 !important;
-  box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.3);
+  border: 2px solid #000000 !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
 }
 
 .calendar-day .day-number {

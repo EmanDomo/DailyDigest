@@ -362,57 +362,39 @@ const UserDashboard = ({ setIsLoggedIn }) => {
     const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const mobileDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-    // Header row with responsive day names
+    // Header row
     calendar.push(
       <Row key="headers" className="mb-2 g-0">
         {weekDays.map((day, index) => (
           <Col key={day} className="calendar-header">
-            {/* Full day name on large screens */}
             <div className="d-none d-lg-block">{day}</div>
-            {/* Short day name on medium screens */}
             <div className="d-none d-md-block d-lg-none">{shortDays[index]}</div>
-            {/* Single letter on small screens */}
             <div className="d-md-none">{mobileDays[index]}</div>
           </Col>
         ))}
       </Row>
     );
 
-    // Calculate total cells needed (6 weeks max)
-    const totalCells = 42;
     let currentDate = 1;
-    let nextMonthDate = 1;
 
-    // Create 6 rows of 7 days each
+    // Build calendar rows (up to 6 weeks)
     for (let week = 0; week < 6; week++) {
       const weekRow = [];
-      let hasContent = false; // Track if this week has any current month days
 
       for (let day = 0; day < 7; day++) {
         const cellIndex = week * 7 + day;
         let dayContent = null;
         let dayClass = 'calendar-day';
         let dateString = '';
-        let isCurrentMonth = false;
 
-        if (cellIndex < startingDayOfWeek) {
-          // Previous month days (empty)
-          const prevMonth = viewMonth === 0 ? 11 : viewMonth - 1;
-          const prevYear = viewMonth === 0 ? viewYear - 1 : viewYear;
-          const prevMonthLastDay = new Date(prevYear, prevMonth + 1, 0).getDate();
-          const prevDate = prevMonthLastDay - (startingDayOfWeek - cellIndex - 1);
-          dayContent = (
-            <div className={`${dayClass} prev-month`}>
-              <span className="day-number text-muted">{prevDate}</span>
-            </div>
-          );
-        } else if (currentDate <= daysInMonth) {
-          // Current month days
-          isCurrentMonth = true;
-          hasContent = true;
+        // Add empty cells before the first day of the month
+        if (cellIndex < startingDayOfWeek || currentDate > daysInMonth) {
+          dayContent = <div className="calendar-day calendar-day-empty"></div>;
+        } else {
           dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(currentDate).padStart(2, '0')}`;
           const hasPooped = poopDates.includes(dateString);
-          const isToday = currentDate === today.getDate() &&
+          const isToday =
+            currentDate === today.getDate() &&
             viewMonth === today.getMonth() &&
             viewYear === today.getFullYear();
 
@@ -428,17 +410,8 @@ const UserDashboard = ({ setIsLoggedIn }) => {
               {hasPooped && <span className="poop-emoji">💩</span>}
             </div>
           );
+
           currentDate++;
-        } else {
-          // Next month days
-          const nextMonth = viewMonth === 11 ? 0 : viewMonth + 1;
-          const nextYear = viewMonth === 11 ? viewYear + 1 : viewYear;
-          dayContent = (
-            <div className={`${dayClass} next-month`}>
-              <span className="day-number text-muted">{nextMonthDate}</span>
-            </div>
-          );
-          nextMonthDate++;
         }
 
         weekRow.push(
@@ -448,23 +421,19 @@ const UserDashboard = ({ setIsLoggedIn }) => {
         );
       }
 
-      // Only add the week if it has current month content or it's one of the first 5 weeks
-      if (hasContent || week < 5) {
-        calendar.push(
-          <Row key={`week-${week}`} className="mb-1 g-0">
-            {weekRow}
-          </Row>
-        );
-      }
+      // Stop adding weeks if the month is fully rendered
+      calendar.push(
+        <Row key={`week-${week}`} className="mb-1 g-0">
+          {weekRow}
+        </Row>
+      );
 
-      // Break if we've shown all days of current month and the week is empty
-      if (currentDate > daysInMonth && !hasContent) {
-        break;
-      }
+      if (currentDate > daysInMonth) break;
     }
 
     return calendar;
   };
+
 
   // Alternative simplified version if you prefer cleaner layout
   const renderCalendarSimple = () => {
