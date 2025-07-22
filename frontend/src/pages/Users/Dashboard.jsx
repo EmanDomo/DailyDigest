@@ -350,82 +350,213 @@ const UserDashboard = ({ setIsLoggedIn }) => {
   };
 
   // ==================== RENDER FUNCTIONS ====================
-  const renderCalendar = () => {
-    const today = new Date();
-    const firstDay = new Date(viewYear, viewMonth, 1);
-    const lastDay = new Date(viewYear, viewMonth + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
+const renderCalendar = () => {
+  const today = new Date();
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  const lastDay = new Date(viewYear, viewMonth + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay();
 
-    const calendar = [];
-    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const calendar = [];
+  const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const mobileDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-    // Header row with responsive day names
-    calendar.push(
-      <Row key="headers" className="text-center mb-2">
-        {weekDays.map(day => (
-          <Col key={day} className="calendar-header p-0">
-            {/* Full day name on larger screens */}
-            <div className="d-none d-md-block">{day}</div>
-            {/* Single letter on mobile */}
-            <div className="d-md-none">{day.charAt(0)}</div>
-          </Col>
-        ))}
-      </Row>
-    );
+  // Header row with responsive day names
+  calendar.push(
+    <Row key="headers" className="mb-2 g-0">
+      {weekDays.map((day, index) => (
+        <Col key={day} className="calendar-header">
+          {/* Full day name on large screens */}
+          <div className="d-none d-lg-block">{day}</div>
+          {/* Short day name on medium screens */}
+          <div className="d-none d-md-block d-lg-none">{shortDays[index]}</div>
+          {/* Single letter on small screens */}
+          <div className="d-md-none">{mobileDays[index]}</div>
+        </Col>
+      ))}
+    </Row>
+  );
 
-    let week = [];
-    let dayCounter = 1;
-
-    // Empty cells for days before the month starts
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      week.push(<Col key={`empty-${i}`} className="p-0" />);
-    }
-
-    // Calendar days
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const hasPooped = poopDates.includes(dateString);
-      const isToday = day === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
-
-      week.push(
-        <Col key={day} className="p-0">
+  // Calculate total cells needed (6 weeks max)
+  const totalCells = 42;
+  let currentDate = 1;
+  let nextMonthDate = 1;
+  
+  // Create 6 rows of 7 days each
+  for (let week = 0; week < 6; week++) {
+    const weekRow = [];
+    let hasContent = false; // Track if this week has any current month days
+    
+    for (let day = 0; day < 7; day++) {
+      const cellIndex = week * 7 + day;
+      let dayContent = null;
+      let dayClass = 'calendar-day';
+      let dateString = '';
+      let isCurrentMonth = false;
+      
+      if (cellIndex < startingDayOfWeek) {
+        // Previous month days (empty)
+        const prevMonth = viewMonth === 0 ? 11 : viewMonth - 1;
+        const prevYear = viewMonth === 0 ? viewYear - 1 : viewYear;
+        const prevMonthLastDay = new Date(prevYear, prevMonth + 1, 0).getDate();
+        const prevDate = prevMonthLastDay - (startingDayOfWeek - cellIndex - 1);
+        dayContent = (
+          <div className={`${dayClass} prev-month`}>
+            <span className="day-number text-muted">{prevDate}</span>
+          </div>
+        );
+      } else if (currentDate <= daysInMonth) {
+        // Current month days
+        isCurrentMonth = true;
+        hasContent = true;
+        dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(currentDate).padStart(2, '0')}`;
+        const hasPooped = poopDates.includes(dateString);
+        const isToday = currentDate === today.getDate() && 
+                       viewMonth === today.getMonth() && 
+                       viewYear === today.getFullYear();
+        
+        if (hasPooped) dayClass += ' poop-day';
+        if (isToday) dayClass += ' today';
+        
+        dayContent = (
           <div
-            className={`calendar-day ${hasPooped ? 'poop-day' : ''} ${isToday ? 'today' : ''}`}
+            className={dayClass}
             onClick={() => handleCalendarDayClick(dateString)}
           >
-            <span className="day-number">{day}</span>
+            <span className="day-number">{currentDate}</span>
             {hasPooped && <span className="poop-emoji">💩</span>}
           </div>
+        );
+        currentDate++;
+      } else {
+        // Next month days
+        const nextMonth = viewMonth === 11 ? 0 : viewMonth + 1;
+        const nextYear = viewMonth === 11 ? viewYear + 1 : viewYear;
+        dayContent = (
+          <div className={`${dayClass} next-month`}>
+            <span className="day-number text-muted">{nextMonthDate}</span>
+          </div>
+        );
+        nextMonthDate++;
+      }
+      
+      weekRow.push(
+        <Col key={`${week}-${day}`} className="p-1">
+          {dayContent}
         </Col>
       );
-
-      // Complete week, add to calendar
-      if (week.length === 7) {
-        calendar.push(
-          <Row key={`week-${dayCounter}`} className="mb-2 g-2">
-            {week}
-          </Row>
-        );
-        week = [];
-        dayCounter++;
-      }
     }
-
-    // Fill remaining empty cells in the last week
-    if (week.length > 0) {
-      while (week.length < 7) {
-        week.push(<Col key={`empty-end-${week.length}`} className="p-0" />);
-      }
+    
+    // Only add the week if it has current month content or it's one of the first 5 weeks
+    if (hasContent || week < 5) {
       calendar.push(
-        <Row key={`week-${dayCounter}`} className="mb-2 g-2">
-          {week}
+        <Row key={`week-${week}`} className="mb-1 g-0">
+          {weekRow}
         </Row>
       );
     }
+    
+    // Break if we've shown all days of current month and the week is empty
+    if (currentDate > daysInMonth && !hasContent) {
+      break;
+    }
+  }
 
-    return calendar;
-  };
+  return calendar;
+};
+
+// Alternative simplified version if you prefer cleaner layout
+const renderCalendarSimple = () => {
+  const today = new Date();
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const startingDayOfWeek = firstDay.getDay();
+
+  const calendar = [];
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  // Header row
+  calendar.push(
+    <Row key="headers" className="mb-2">
+      {weekDays.map(day => (
+        <Col key={day} className="calendar-header">
+          <span className="d-none d-sm-inline">{day}</span>
+          <span className="d-sm-none">{day.charAt(0)}</span>
+        </Col>
+      ))}
+    </Row>
+  );
+
+  let week = [];
+  let date = 1;
+
+  // Add empty cells for days before the month starts
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    week.push(
+      <Col key={`empty-${i}`} className="p-1">
+        <div className="calendar-day calendar-day-empty"></div>
+      </Col>
+    );
+  }
+
+  // Add days of the month
+  while (date <= daysInMonth) {
+    const dateString = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+    const hasPooped = poopDates.includes(dateString);
+    const isToday = date === today.getDate() && 
+                   viewMonth === today.getMonth() && 
+                   viewYear === today.getFullYear();
+
+    let dayClass = 'calendar-day';
+    if (hasPooped) dayClass += ' poop-day';
+    if (isToday) dayClass += ' today';
+
+    week.push(
+      <Col key={date} className="p-1">
+        <div
+          className={dayClass}
+          onClick={() => handleCalendarDayClick(dateString)}
+        >
+          <span className="day-number">{date}</span>
+          {hasPooped && <span className="poop-emoji">💩</span>}
+        </div>
+      </Col>
+    );
+
+    // If week is complete, add it to calendar and start new week
+    if (week.length === 7) {
+      calendar.push(
+        <Row key={`week-${Math.ceil(date / 7)}`} className="mb-1">
+          {week}
+        </Row>
+      );
+      week = [];
+    }
+
+    date++;
+  }
+
+  // Fill remaining cells in the last week if needed
+  while (week.length > 0 && week.length < 7) {
+    week.push(
+      <Col key={`empty-end-${week.length}`} className="p-1">
+        <div className="calendar-day calendar-day-empty"></div>
+      </Col>
+    );
+  }
+
+  // Add the last week if it has content
+  if (week.length > 0) {
+    calendar.push(
+      <Row key={`week-final`} className="mb-1">
+        {week}
+      </Row>
+    );
+  }
+
+  return calendar;
+};
 
   // Poop Animation Component
   const PoopAnimation = () => {
@@ -703,7 +834,7 @@ const UserDashboard = ({ setIsLoggedIn }) => {
                 {showCalendar ? (
                   <>
                     <div className="calendar">
-                      {renderCalendar()}
+                      {renderCalendarSimple()}
                     </div>
                     {/* <div className="calendar-legend">
                       <div className="legend-item">
